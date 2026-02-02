@@ -1,0 +1,44 @@
+{
+  "nav": {
+    "cv": "CV",
+    "blog": "Blog",
+    "tg": "TG",
+    "mail": "Email",
+    "lang": "EN"
+  },
+  "hero": {
+    "title": "Alexander Lygin, product designer, designing high-load services for the real world, not for presentations.",
+    "subtitle": "Growth, B2B SaaS, ERP, fintech, web3.",
+    "cta": "Message me",
+    "years": "9+ years in products.",
+    "exp1": "Inspiring teams.",
+    "exp2": "Embracing chaos.",
+    "exp3": "Data-driven & efficient.",
+    "exp4": "The #1 choice in tough times."
+  },
+  "cases": {
+    "blum": {
+      "title": "Design and launch of Blum.io trading platform",
+      "desc": "How we converted 95m+ users of <br class=\"br-tablet\">the #2 Telegram mini-app (Blum) into active traders."
+    },
+    "tasks": {
+      "title": "Clear task statuses in Blum",
+      "desc": "How a small detail reduced <br class=\"br-tablet\">support tickets from 75% → 15%"
+    },
+    "levels": {
+      "title": "Revamped Blum's level system",
+      "desc": "Redesigned the level system to make it clearer and boost subscription activation conversion"
+    },
+    "templates": {
+      "title": "Template design for Yandex Vzglyad",
+      "desc": "Offered businesses solutions through research at every stage."
+    }
+  },
+  "widgets": {
+    "label1": "Just widgets",
+    "label2": "Just widgets 2"
+  },
+  "footer": {
+    "version": "Version 1.0"
+  }
+}
