@@ -44,3 +44,40 @@
   - ТГК: t.me/sasha_lygin
   - Почта: lyginmail@gmail.com
   - Кнопка "Написать в тг": t.me/jupel
+
+---
+
+## [2026-02-02] session-1738519200
+
+### GitHub репозиторий и хостинг
+
+- Создан .gitignore (macOS, IDE, CLAUDE.md, project.mdc)
+- Инициализирован git репозиторий
+- Создан репозиторий Jupels/portfolio на GitHub
+- Настроен GitHub Pages для хостинга
+
+### Исправления мобильной версии (по макету Figma 360px)
+
+- Case-карточки: padding 20→12px, border-radius 20→12px, gap 20→30px, font 16→14px
+- Кнопка-стрелка: высота 40→36px на мобилке
+- Header: высота 64→56px, padding-x 20→12px
+- Hero title: font 24→22px, line-height 28→30px, letter-spacing -0.5→-0.9px, max-width 320px
+- Hero experience: font 16→14px, max-width 328px, скрыты <br> на мобилке
+- Hero logos: grid 3x3, height 40px, выравнивание по центру
+- Footer: font 16→14px
+- Cases секция: padding 0 12px
+
+### Мобильное меню
+
+- Добавлен overlay меню (оранжевый фон #ff5900, скругление 20px)
+- Ссылки: CV, LinkedIn, Dribbble, Блог, ТГК, Почта, RU
+- Шрифт 20px Semi Bold, hover → белый цвет
+- Кнопка закрытия (Close_LG.svg 16x16)
+- Логотип LGN по центру внизу (lgn.svg)
+- JS: открытие/закрытие меню, блокировка скролла
+
+### Файлы
+
+- `.gitignore` — правила игнорирования
+- `icons/Close_LG.svg` — иконка закрытия
+- `icons/lgn.svg` — логотип LGN
