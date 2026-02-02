@@ -479,6 +479,7 @@ button {
 .mobile-menu__footer {
   display: flex;
   align-items: center;
+  justify-content: center;
   padding: 10px 20px;
   height: 56px;
 }
