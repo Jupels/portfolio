@@ -475,6 +475,10 @@ button {
     max-width: 328px;
   }
 
+  .hero__experience br {
+    display: none;
+  }
+
   .hero__logos {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
