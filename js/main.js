@@ -120,6 +120,32 @@
   }
 
   // ===================================
+  // Мобильное меню
+  // ===================================
+
+  /**
+   * Открывает мобильное меню
+   */
+  function openMobileMenu() {
+    const menu = document.getElementById('mobile-menu');
+    if (menu) {
+      menu.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  /**
+   * Закрывает мобильное меню
+   */
+  function closeMobileMenu() {
+    const menu = document.getElementById('mobile-menu');
+    if (menu) {
+      menu.classList.remove('is-open');
+      document.body.style.overflow = '';
+    }
+  }
+
+  // ===================================
   // Темы (подготовка)
   // ===================================
 
@@ -162,6 +188,32 @@
     if (langToggle) {
       langToggle.addEventListener('click', toggleLanguage);
     }
+
+    // Мобильное меню
+    const menuToggle = document.getElementById('menu-toggle');
+    const menuClose = document.getElementById('menu-close');
+    const menuLangToggle = document.getElementById('menu-lang-toggle');
+
+    if (menuToggle) {
+      menuToggle.addEventListener('click', openMobileMenu);
+    }
+
+    if (menuClose) {
+      menuClose.addEventListener('click', closeMobileMenu);
+    }
+
+    if (menuLangToggle) {
+      menuLangToggle.addEventListener('click', () => {
+        toggleLanguage();
+        closeMobileMenu();
+      });
+    }
+
+    // Закрытие меню по клику на ссылку
+    const menuLinks = document.querySelectorAll('.mobile-menu__link[href]');
+    menuLinks.forEach(link => {
+      link.addEventListener('click', closeMobileMenu);
+    });
   }
 
   // Запускаем при загрузке DOM
