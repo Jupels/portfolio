@@ -477,7 +477,8 @@ button {
 
   .hero__logos {
     display: grid;
-    grid-template-columns: repeat(3, auto);
+    grid-template-columns: repeat(3, 1fr);
+    justify-items: center;
     gap: 0;
   }
 
