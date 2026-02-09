@@ -146,3 +146,14 @@
   - `cases.*` → `index.cases.*`
   - `widgets.*` → `index.widgets.*`
 - Исправлены пути во всех компонентах: header, footer, mobile menu
+
+---
+
+## [2026-02-09] session-1770746400
+
+### Автоопределение языка по браузеру
+
+- Добавлена функция `getBrowserLanguage()` в `js/main.js`
+- Определяет язык браузера через `navigator.languages` / `navigator.language`
+- Приоритет: localStorage → язык браузера → дефолтный (ru)
+- При ручном переключении выбор сохраняется в localStorage

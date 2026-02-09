@@ -111,13 +111,36 @@
   }
 
   /**
-   * Инициализирует язык из localStorage или по умолчанию
+   * Определяет язык браузера пользователя
+   */
+  function getBrowserLanguage() {
+    // navigator.languages — массив предпочтительных языков
+    // navigator.language — основной язык браузера
+    const browserLangs = navigator.languages || [navigator.language || navigator.userLanguage];
+
+    for (const lang of browserLangs) {
+      // Проверяем начало кода языка (en-US → en, ru-RU → ru)
+      const langCode = lang.split('-')[0].toLowerCase();
+      if (CONFIG.supportedLangs.includes(langCode)) {
+        return langCode;
+      }
+    }
+
+    return CONFIG.defaultLang;
+  }
+
+  /**
+   * Инициализирует язык из localStorage, языка браузера или по умолчанию
    */
   async function initLanguage() {
     const savedLang = localStorage.getItem(CONFIG.storageKey);
 
     if (savedLang && CONFIG.supportedLangs.includes(savedLang)) {
+      // Приоритет: сохранённый выбор пользователя
       currentLang = savedLang;
+    } else {
+      // Если пользователь ещё не выбирал — определяем по языку браузера
+      currentLang = getBrowserLanguage();
     }
 
     // Загружаем переводы для текущего языка
