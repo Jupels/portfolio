@@ -665,7 +665,7 @@ button {
 }
 
 .widget-card__gif {
-  max-width: 180px;
+  width: 180px;
   height: auto;
   border-radius: var(--border-radius-small);
 }
@@ -706,7 +706,7 @@ button {
   }
 
   .widget-card__gif {
-    max-width: 150px;
+    width: 150px;
   }
 }
 

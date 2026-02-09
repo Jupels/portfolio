@@ -77,6 +77,17 @@
       }
     });
 
+    // Обновляем ссылки с data-i18n-href
+    const hrefElements = document.querySelectorAll('[data-i18n-href]');
+    hrefElements.forEach(el => {
+      const key = el.getAttribute('data-i18n-href');
+      const value = getNestedValue(langData, key);
+
+      if (value !== undefined) {
+        el.href = value;
+      }
+    });
+
     // Обновляем атрибут lang на html
     document.documentElement.lang = lang;
   }
@@ -116,7 +127,28 @@
     // (HTML уже содержит русский текст с нужной разметкой)
     if (currentLang !== CONFIG.defaultLang && translations[currentLang]) {
       applyTranslations(currentLang);
+    } else if (translations[currentLang]) {
+      // Для дефолтного языка всё равно устанавливаем динамические ссылки
+      applyDynamicLinks(currentLang);
     }
+  }
+
+  /**
+   * Применяет только динамические ссылки (без перезаписи текста)
+   */
+  function applyDynamicLinks(lang) {
+    const langData = translations[lang];
+    if (!langData) return;
+
+    const hrefElements = document.querySelectorAll('[data-i18n-href]');
+    hrefElements.forEach(el => {
+      const key = el.getAttribute('data-i18n-href');
+      const value = getNestedValue(langData, key);
+
+      if (value !== undefined) {
+        el.href = value;
+      }
+    });
   }
 
   // ===================================
