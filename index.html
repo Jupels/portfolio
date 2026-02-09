@@ -17,7 +17,7 @@
   <header class="header" id="header">
     <nav class="header__nav">
       <div class="header__left">
-        <a href="#" class="header__link" data-i18n="nav.cv" data-i18n-href="links.cv" target="_blank" rel="noopener">CV</a>
+        <a href="#" class="header__link" data-i18n="header.cv" data-i18n-href="links.cv" target="_blank" rel="noopener">CV</a>
         <a href="https://www.linkedin.com/in/alexlygin/" class="header__link" target="_blank" rel="noopener">LinkedIn</a>
         <a href="https://dribbble.com/jupel" class="header__link" target="_blank" rel="noopener">Dribbble</a>
       </div>
@@ -27,11 +27,11 @@
       </a>
 
       <div class="header__right">
-        <a href="https://www.instagram.com/sasha_lygin" class="header__link header__link--desktop" target="_blank" rel="noopener" data-i18n="nav.blog">Блог</a>
-        <a href="https://t.me/sasha_lygin" class="header__link header__link--desktop" target="_blank" rel="noopener" data-i18n="nav.tg">ТГК</a>
-        <a href="mailto:lyginmail@gmail.com" class="header__link header__link--desktop" data-i18n="nav.mail">Почта</a>
-        <button class="header__lang header__link--desktop" id="lang-toggle" data-i18n="nav.lang">RU</button>
-        <button class="header__menu-btn" id="menu-toggle" data-i18n="nav.menu">Меню</button>
+        <a href="https://www.instagram.com/sasha_lygin" class="header__link header__link--desktop" target="_blank" rel="noopener" data-i18n="header.blog">Блог</a>
+        <a href="https://t.me/sasha_lygin" class="header__link header__link--desktop" target="_blank" rel="noopener" data-i18n="header.tg">ТГК</a>
+        <a href="mailto:lyginmail@gmail.com" class="header__link header__link--desktop" data-i18n="header.mail">Почта</a>
+        <button class="header__lang header__link--desktop" id="lang-toggle" data-i18n="header.lang">RU</button>
+        <button class="header__menu-btn" id="menu-toggle" data-i18n="header.menu">Меню</button>
       </div>
     </nav>
   </header>
@@ -41,21 +41,21 @@
     <!-- Hero Section -->
     <section class="hero" id="hero">
       <h1 class="hero__title">
-        <span data-i18n="hero.title">Александр Лыгин, продуктовый дизайнер, проектирую high-load сервисы для реального мира, а не для презентаций.</span>
-        <span class="hero__title--muted" data-i18n="hero.subtitle">Growth, B2B SaaS, ERP, финтех, web3.</span>
+        <span data-i18n="index.hero.title">Александр Лыгин, продуктовый дизайнер, проектирую high-load сервисы для реального мира, а не для презентаций.</span>
+        <span class="hero__title--muted" data-i18n="index.hero.subtitle">Growth, B2B SaaS, ERP, финтех, web3.</span>
       </h1>
 
       <a href="https://t.me/jupel" class="btn-telegram" target="_blank" rel="noopener">
         <img src="icons/SVG - Telegram.svg" alt="" width="20" height="20">
-        <span data-i18n="hero.cta">Написать в тг</span>
+        <span data-i18n="index.hero.cta">Написать в тг</span>
       </a>
 
       <p class="hero__experience">
-        <span class="hero__experience--accent" data-i18n="hero.years">9+ лет в продуктах.</span>
-        <span data-i18n="hero.exp1">Вдохновляю команду.</span><br>
-        <span data-i18n="hero.exp2">Работаю с хаосом.</span>
-        <span data-i18n="hero.exp3">За data-driven и эффективность.</span><br>
-        <span data-i18n="hero.exp4">Выбор #1 в сложные времена.</span>
+        <span class="hero__experience--accent" data-i18n="index.hero.years">9+ лет в продуктах.</span>
+        <span data-i18n="index.hero.exp1">Вдохновляю команду.</span><br>
+        <span data-i18n="index.hero.exp2">Работаю с хаосом.</span>
+        <span data-i18n="index.hero.exp3">За data-driven и эффективность.</span><br>
+        <span data-i18n="index.hero.exp4">Выбор #1 в сложные времена.</span>
       </p>
 
       <!-- Логотипы компаний -->
@@ -78,10 +78,10 @@
       <article class="case-card">
         <div class="case-card__header">
           <div class="case-card__text">
-            <h2 class="case-card__title" data-i18n="cases.blum.title">Дизайн и запуск торговой платформы Blum.io</h2>
-            <p class="case-card__desc" data-i18n="cases.blum.desc">Как мы сконвертировали 95м+ юзеров <br class="br-tablet">топ-2 миниаппа в тг (Blum) в активных трейдеров.</p>
+            <h2 class="case-card__title" data-i18n="index.cases.blum.title">Дизайн и запуск торговой платформы Blum.io</h2>
+            <p class="case-card__desc" data-i18n="index.cases.blum.desc">Как мы сконвертировали 95м+ юзеров <br class="br-tablet">топ-2 миниаппа в тг (Blum) в активных трейдеров.</p>
           </div>
-          <a href="#" class="btn-dark">
+          <a href="case_hub.html" class="btn-dark">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
@@ -94,8 +94,8 @@
       <article class="case-card">
         <img src="icons/Coming_soon.svg" alt="Coming soon" class="coming-soon">
         <div class="case-card__text">
-          <h2 class="case-card__title" data-i18n="cases.tasks.title">Понятные статусы задач в Blum</h2>
-          <p class="case-card__desc" data-i18n="cases.tasks.desc">Как маленькая деталь сократила количество <br class="br-tablet">обращений в саппорт c 75% → 15%</p>
+          <h2 class="case-card__title" data-i18n="index.cases.tasks.title">Понятные статусы задач в Blum</h2>
+          <p class="case-card__desc" data-i18n="index.cases.tasks.desc">Как маленькая деталь сократила количество <br class="br-tablet">обращений в саппорт c 75% → 15%</p>
         </div>
         <img src="img/home/case_tasks.png" alt="Task Statuses" class="case-card__image case-card__image--centered">
       </article>
@@ -104,8 +104,8 @@
       <article class="case-card">
         <img src="icons/Coming_soon.svg" alt="Coming soon" class="coming-soon">
         <div class="case-card__text">
-          <h2 class="case-card__title" data-i18n="cases.levels.title">Обновление системы уровней Blum</h2>
-          <p class="case-card__desc" data-i18n="cases.levels.desc">Перераболи систему уровней и сделали её более понятной чтобы повысить конверсию в активацию подписок</p>
+          <h2 class="case-card__title" data-i18n="index.cases.levels.title">Обновление системы уровней Blum</h2>
+          <p class="case-card__desc" data-i18n="index.cases.levels.desc">Перераболи систему уровней и сделали её более понятной чтобы повысить конверсию в активацию подписок</p>
         </div>
         <img src="img/home/case_levels.png" alt="Levels System" class="case-card__image">
       </article>
@@ -114,8 +114,8 @@
       <article class="case-card">
         <img src="icons/Coming_soon.svg" alt="Coming soon" class="coming-soon">
         <div class="case-card__text">
-          <h2 class="case-card__title" data-i18n="cases.templates.title">Дизайн шаблонов для Яндекс Взгляда</h2>
-          <p class="case-card__desc" data-i18n="cases.templates.desc">Предложили бизнесу решать их задачи с помощью разных исследований на каждом этапе.</p>
+          <h2 class="case-card__title" data-i18n="index.cases.templates.title">Дизайн шаблонов для Яндекс Взгляда</h2>
+          <p class="case-card__desc" data-i18n="index.cases.templates.desc">Предложили бизнесу решать их задачи с помощью разных исследований на каждом этапе.</p>
         </div>
         <img src="img/home/case_templates.png" alt="Yandex Templates" class="case-card__image case-card__image--rounded">
       </article>
@@ -123,11 +123,11 @@
       <!-- Widgets (GIFs) -->
       <div class="cases__widgets">
         <div class="widget-card">
-          <p class="widget-card__label" data-i18n="widgets.label1">Просто виджеты</p>
+          <p class="widget-card__label" data-i18n="index.widgets.label1">Просто виджеты</p>
           <img src="img/gif/gif1.gif" alt="Widget animation" class="widget-card__gif">
         </div>
         <div class="widget-card">
-          <p class="widget-card__label" data-i18n="widgets.label2">Просто виджеты 2</p>
+          <p class="widget-card__label" data-i18n="index.widgets.label2">Просто виджеты 2</p>
           <img src="img/gif/gif2b.gif" alt="Widget animation" class="widget-card__gif">
         </div>
       </div>
@@ -143,12 +143,12 @@
 
     <!-- Мобильное меню (скрыто на десктопе) -->
     <nav class="footer__mobile-nav">
-      <a href="#" class="footer__link" data-i18n="nav.cv" data-i18n-href="links.cv" target="_blank" rel="noopener">CV</a>
+      <a href="#" class="footer__link" data-i18n="header.cv" data-i18n-href="links.cv" target="_blank" rel="noopener">CV</a>
       <a href="https://www.linkedin.com/in/alexlygin/" class="footer__link" target="_blank" rel="noopener">LinkedIn</a>
       <a href="https://dribbble.com/jupel" class="footer__link" target="_blank" rel="noopener">Dribbble</a>
-      <a href="https://www.instagram.com/sasha_lygin" class="footer__link" target="_blank" rel="noopener" data-i18n="nav.blog">Блог</a>
-      <a href="https://t.me/sasha_lygin" class="footer__link" target="_blank" rel="noopener" data-i18n="nav.tg">ТГК</a>
-      <a href="mailto:lyginmail@gmail.com" class="footer__link" data-i18n="nav.mail">Почта</a>
+      <a href="https://www.instagram.com/sasha_lygin" class="footer__link" target="_blank" rel="noopener" data-i18n="header.blog">Блог</a>
+      <a href="https://t.me/sasha_lygin" class="footer__link" target="_blank" rel="noopener" data-i18n="header.tg">ТГК</a>
+      <a href="mailto:lyginmail@gmail.com" class="footer__link" data-i18n="header.mail">Почта</a>
     </nav>
   </footer>
 
@@ -161,13 +161,13 @@
         </button>
       </div>
       <nav class="mobile-menu__nav">
-        <a href="#" class="mobile-menu__link" data-i18n="nav.cv" data-i18n-href="links.cv" target="_blank" rel="noopener">CV</a>
+        <a href="#" class="mobile-menu__link" data-i18n="header.cv" data-i18n-href="links.cv" target="_blank" rel="noopener">CV</a>
         <a href="https://www.linkedin.com/in/alexlygin/" class="mobile-menu__link" target="_blank" rel="noopener">LinkedIn</a>
         <a href="https://dribbble.com/jupel" class="mobile-menu__link" target="_blank" rel="noopener">Dribbble</a>
-        <a href="https://www.instagram.com/sasha_lygin" class="mobile-menu__link" target="_blank" rel="noopener" data-i18n="nav.blog">Блог</a>
-        <a href="https://t.me/sasha_lygin" class="mobile-menu__link" target="_blank" rel="noopener" data-i18n="nav.tg">ТГК</a>
-        <a href="mailto:lyginmail@gmail.com" class="mobile-menu__link" data-i18n="nav.mail">Почта</a>
-        <button class="mobile-menu__link" id="menu-lang-toggle" data-i18n="nav.lang">RU</button>
+        <a href="https://www.instagram.com/sasha_lygin" class="mobile-menu__link" target="_blank" rel="noopener" data-i18n="header.blog">Блог</a>
+        <a href="https://t.me/sasha_lygin" class="mobile-menu__link" target="_blank" rel="noopener" data-i18n="header.tg">ТГК</a>
+        <a href="mailto:lyginmail@gmail.com" class="mobile-menu__link" data-i18n="header.mail">Почта</a>
+        <button class="mobile-menu__link" id="menu-lang-toggle" data-i18n="header.lang">RU</button>
       </nav>
       <div class="mobile-menu__footer">
         <img src="icons/lgn.svg" alt="LGN">

@@ -91,3 +91,58 @@
 - Добавлены GIF-анимации в виджеты на главной странице
 - Заменены плейсхолдеры на img/gif/gif1.gif и img/gif/gif2.gif
 - Обновлены CSS стили: .widget-card__placeholder → .widget-card__gif
+
+---
+
+## [2026-02-09] session-1770638163
+
+### Кейс: Blum.io Trading Hub
+
+- Создана страница кейса `case_hub.html`
+- Добавлены стили для страницы кейса в `css/styles.css`
+- Добавлены переводы на русском и английском в `data/ru.json`, `data/en.json`
+- Реализована адаптивность для 4 брейкпоинтов: 360px, 640px, 1080px, 1440px
+- Реализован раскрывающийся блок "Результаты" (toggle)
+- Добавлена ссылка на кейс с главной страницы
+
+### Секции кейса
+
+- Intro: теги, заголовок
+- Team: аватары и роли команды (C-level, разработчики, дизайн)
+- Role: моя роль в проекте
+- Cover: задача и результаты + главное изображение
+- Problem: проблема с Telegram-ботом
+- Rivals: анализ конкурентов
+- Intersection: крупная цитата
+- MVP: дизайн MVP
+- Design System: задача для дизайнеров
+- Insight: инсайт о трейдинге (бордер dashed)
+- Quickbuy: фича быстрой покупки
+- Token pages: анализ и наш дизайн
+- Final result: финальный экран
+- Buy/Wallet/Waitlist: дополнительные экраны
+- Results: блок с метриками + раскрывающаяся детализация
+
+### Файлы
+
+- `case_hub.html` — страница кейса
+- `css/styles.css` — стили (секция Case Page)
+- `data/ru.json` — русские переводы (секция caseHub)
+- `data/en.json` — английские переводы (секция caseHub)
+- `img/case_hub/` — изображения для кейса (12 файлов)
+- `img/case_hub/team/` — фото команды (7 файлов)
+
+---
+
+## [2026-02-09] session-1770638163 (продолжение)
+
+### Рефакторинг структуры JSON переводов
+
+- Реорганизована структура JSON файлов переводов (ru.json, en.json)
+- Новая структура: `links`, `header`, `footer`, `index`, `caseHub`
+- Обновлены пути data-i18n в index.html и case_hub.html:
+  - `nav.*` → `header.*`
+  - `hero.*` → `index.hero.*`
+  - `cases.*` → `index.cases.*`
+  - `widgets.*` → `index.widgets.*`
+- Исправлены пути во всех компонентах: header, footer, mobile menu

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Кейс: Дизайн и запуск торговой платформы Blum.io Trading Hub">
+  <title>Blum.io Trading Hub — Александр Лыгин</title>
+
+  <!-- Стили -->
+  <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="icons/Logo.png">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header" id="header">
+    <nav class="header__nav">
+      <div class="header__left">
+        <a href="#" class="header__link" data-i18n="header.cv" data-i18n-href="links.cv" target="_blank" rel="noopener">CV</a>
+        <a href="https://www.linkedin.com/in/alexlygin/" class="header__link" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://dribbble.com/jupel" class="header__link" target="_blank" rel="noopener">Dribbble</a>
+      </div>
+
+      <a href="index.html" class="header__logo">
+        <img src="icons/Logo.png" alt="Logo" width="36" height="36">
+      </a>
+
+      <div class="header__right">
+        <a href="https://www.instagram.com/sasha_lygin" class="header__link header__link--desktop" target="_blank" rel="noopener" data-i18n="header.blog">Блог</a>
+        <a href="https://t.me/sasha_lygin" class="header__link header__link--desktop" target="_blank" rel="noopener" data-i18n="header.tg">ТГК</a>
+        <a href="mailto:lyginmail@gmail.com" class="header__link header__link--desktop" data-i18n="header.mail">Почта</a>
+        <button class="header__lang header__link--desktop" id="lang-toggle" data-i18n="header.lang">RU</button>
+        <button class="header__menu-btn" id="menu-toggle" data-i18n="header.menu">Меню</button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main content -->
+  <main class="case-page">
+    <article class="case-content">
+      <!-- Intro -->
+      <section class="case-intro">
+        <div class="case-intro__tags">
+          <span data-i18n="caseHub.tags.cases">Кейсы</span>
+          <span>Blum.io</span>
+          <span>2025</span>
+        </div>
+        <h1 class="case-intro__title" data-i18n="caseHub.intro.title">Blum trading hub — это молодой стартап внутри Blum.io, специализирующийся на разработке тг-ботов для торговли мемкоинами.</h1>
+      </section>
+
+      <!-- Team -->
+      <section class="case-team">
+        <div class="case-team__group">
+          <div class="case-team__avatars">
+            <img src="img/case_hub/team/Ellipse 4259.png" alt="" class="case-team__avatar">
+            <img src="img/case_hub/team/Ellipse 4260.png" alt="" class="case-team__avatar">
+            <img src="img/case_hub/team/Ellipse 4261.png" alt="" class="case-team__avatar">
+            <img src="img/case_hub/team/Ellipse 4263.png" alt="" class="case-team__avatar">
+          </div>
+          <div class="case-team__info">
+            <span class="case-team__role">C-level</span>
+            <span class="case-team__count" data-i18n="caseHub.team.cofounders">4 ко-фаундера</span>
+          </div>
+        </div>
+        <div class="case-team__group">
+          <div class="case-team__avatars">
+            <img src="img/case_hub/team/ava2.png" alt="" class="case-team__avatar">
+            <img src="img/case_hub/team/ava2-1.png" alt="" class="case-team__avatar">
+          </div>
+          <div class="case-team__info">
+            <span class="case-team__role" data-i18n="caseHub.team.devs">Разработчики</span>
+            <span class="case-team__count" data-i18n="caseHub.team.engineers">2 инженера</span>
+          </div>
+        </div>
+        <div class="case-team__group">
+          <div class="case-team__avatars">
+            <img src="img/case_hub/team/group_ava.png" alt="" class="case-team__avatar">
+          </div>
+          <div class="case-team__info">
+            <span class="case-team__role" data-i18n="caseHub.team.design">Дизайн</span>
+            <span class="case-team__count" data-i18n="caseHub.team.designer">1 дизайнер</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Role -->
+      <section class="case-role">
+        <span class="case-role__label" data-i18n="caseHub.role.label">Моя роль</span>
+        <span class="case-role__value" data-i18n="caseHub.role.value">Ведущий продуктовый дизайнер</span>
+      </section>
+
+      <!-- Cover -->
+      <section class="case-cover">
+        <div class="case-cover__meta">
+          <div class="case-cover__block">
+            <h2 class="case-cover__heading" data-i18n="caseHub.cover.task">Задача</h2>
+            <p class="case-cover__text" data-i18n="caseHub.cover.taskDesc">Создать мультичейн торговый терминал вместо старого (Telegram-бота) для экосистемы Blum в 90 млн юзеров.</p>
+          </div>
+          <div class="case-cover__block">
+            <h2 class="case-cover__heading" data-i18n="caseHub.cover.results">Результаты</h2>
+            <p class="case-cover__text">
+              <span class="case-cover__accent" data-i18n="caseHub.cover.traders">2 млн</span> <span data-i18n="caseHub.cover.tradersDesc">активированных трейдеров</span><br>
+              <span class="case-cover__accent" data-i18n="caseHub.cover.dau">300 тыс. DAU</span>
+            </p>
+          </div>
+        </div>
+        <img src="img/case_hub/case_hub-mobile.png" alt="Blum Trading Hub" class="case-cover__image">
+      </section>
+
+      <!-- Block: Problem -->
+      <section class="case-block">
+        <div class="case-block__text">
+          <h2 class="case-block__title" data-i18n="caseHub.problem.title">Проблема</h2>
+          <p class="case-block__desc" data-i18n="caseHub.problem.desc">Интерфейс в тг отпугивал потенциальных клиентов. Он был успешен среди узкого круга трейдеров, но масштабировать такой продукт — сложно.</p>
+        </div>
+        <img src="img/case_hub/case_hub_1bot.png" alt="Telegram bot interface" class="case-block__image">
+      </section>
+
+      <!-- Block: Competitors -->
+      <section class="case-block">
+        <div class="case-block__text">
+          <h2 class="case-block__title" data-i18n="caseHub.rivals.title">Как делать правильно никто толком не знал.</h2>
+          <p class="case-block__desc" data-i18n="caseHub.rivals.desc">Сфера молодая, ей меньше года. И конкуренты проходили этот путь впервые, ни на кого не оглядываясь, многое брали из классического трейдинга.</p>
+        </div>
+        <img src="img/case_hub/case_hub_2rivals.png" alt="Competitor analysis" class="case-block__image">
+      </section>
+
+      <!-- Intersection -->
+      <section class="case-intersection">
+        <p class="case-intersection__text" data-i18n="caseHub.intersection1">Копировать решения конкурентов было рисково: Динамичный рынок, сырые продукты, все менялось каждый месяц!</p>
+      </section>
+
+      <!-- Block: MVP -->
+      <section class="case-block">
+        <div class="case-block__text">
+          <p class="case-block__desc" data-i18n="caseHub.mvp.desc">На основе интерфейса в тг-боте, команда собрала дизайн MVP за месяц. Без компонентов, без стилей, без автолейаутов. И без дизайнера.</p>
+        </div>
+        <img src="img/case_hub/case_hub_3mvp.png" alt="MVP design" class="case-block__image">
+      </section>
+
+      <!-- Block: Design System -->
+      <section class="case-block">
+        <div class="case-block__text">
+          <p class="case-block__desc">
+            <span class="case-block__highlight" data-i18n="caseHub.ds.highlight">И задача для дизайнеров звучала так:</span> <span data-i18n="caseHub.ds.desc">Накатить дизайн систему от основного сервиса, отрисовать edge-кейсы и передать в разработку.</span>
+          </p>
+        </div>
+        <img src="img/case_hub/case_hub_4ds.png" alt="Design system" class="case-block__image">
+      </section>
+
+      <!-- Insight box -->
+      <section class="case-block">
+        <div class="case-insight">
+          <span class="case-insight__label" data-i18n="caseHub.insight.label">Интересный инсайт</span>
+          <h3 class="case-insight__title" data-i18n="caseHub.insight.title">В трейдинге биржа зарабатывает на комиссиях.</h3>
+          <p class="case-insight__desc" data-i18n="caseHub.insight.desc">До 80% прибыли идет с десятка крупных трейдеров, которые торгуют напрямую через API. Остальные игроки решение о покупке активов принимают часто на эмоциях. И тут важны две вещи:</p>
+          <ul class="case-insight__list">
+            <li class="case-insight__item">
+              <span class="case-insight__number">1</span>
+              <span data-i18n="caseHub.insight.point1">Эмоции нужно чем-то вызывать (индикаторы и казино-стайл)</span>
+            </li>
+            <li class="case-insight__item">
+              <span class="case-insight__number">2</span>
+              <span data-i18n="caseHub.insight.point2">Возможность купить мгновенно, пока эмоции не ушли</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="case-block__text">
+          <p class="case-block__desc">
+            <span data-i18n="caseHub.quickbuy.desc">Со скоростью помогает</span> <span class="case-block__bolt">⚡</span> <span data-i18n="caseHub.quickbuy.title">Quickbuy. Покупка и продажа в один клик.</span>
+          </p>
+        </div>
+        <img src="img/case_hub/case_hub_5qb.png" alt="Quickbuy feature" class="case-block__image">
+      </section>
+
+      <!-- Block: Token page -->
+      <section class="case-block">
+        <div class="case-block__text">
+          <p class="case-block__desc" data-i18n="caseHub.tokenpage.desc">А ощущение "мне сейчас повезет" активируется пугающим количеством псевдо-индикаторов на странице токена. Еще, конкуренты не боятся делать мелко: многие компоненты по 12px в высоту.</p>
+        </div>
+        <img src="img/case_hub/case_hub_6tokenpage.png" alt="Token page analysis" class="case-block__image">
+      </section>
+
+      <!-- Block: Our token page -->
+      <section class="case-block">
+        <div class="case-block__text">
+          <p class="case-block__desc" data-i18n="caseHub.myTokenpage.desc">В рамках адаптации нашей дизайн-системы мы пытались найти компромисс между анализом и эмоциями, между масштабом и информативностью. Важное — сразу, остальное — потом.</p>
+        </div>
+        <img src="img/case_hub/case_hub_7my-tokenpage.png" alt="Our token page" class="case-block__image">
+      </section>
+
+      <!-- Block: Final result -->
+      <section class="case-block">
+        <div class="case-block__text">
+          <h2 class="case-block__title" data-i18n="caseHub.final.title">Финальный результат</h2>
+          <p class="case-block__desc" data-i18n="caseHub.final.desc">На главный экран поместились ключевые индикаторы и виджет покупки, который позволяет покупать и продавать в один клик с экрана токена.</p>
+        </div>
+        <img src="img/case_hub/case_hub_8my-tokenpage2.png" alt="Final token page" class="case-block__image">
+      </section>
+
+      <!-- Block: Buy modal -->
+      <section class="case-block">
+        <div class="case-block__text">
+          <p class="case-block__desc" data-i18n="caseHub.buy.desc">В одной из итераций можно было раскрыть виджет и настроить транзакцию более детально прямо в модальном окне, не загружая новые компоненты, но в силу технических ограничений, сделали покупку в отдельном окне.</p>
+        </div>
+        <img src="img/case_hub/case_hub_9buy.png" alt="Buy modal" class="case-block__image">
+      </section>
+
+      <!-- Block: Wallet -->
+      <section class="case-block">
+        <div class="case-block__text">
+          <p class="case-block__desc" data-i18n="caseHub.wallet.desc">Wallet manager — пространство для работы с десятками кошельков в десятках блокчейнах. Здесь нет удобной работы с сотней монет — но их можно сконвертировать и вывести в виде SOL/TON или стейблов.</p>
+        </div>
+        <img src="img/case_hub/case_hub_10wallet.png" alt="Wallet manager" class="case-block__image">
+      </section>
+
+      <!-- Block: Waitlist -->
+      <section class="case-block case-block--last">
+        <div class="case-block__text">
+          <p class="case-block__desc" data-i18n="caseHub.waitlist.desc">Перед запуском сервиса, мы сделали вейтлист и активно перегоняли с помощью тг-бота и соц. сетей весь траффик сюда.</p>
+        </div>
+        <img src="img/case_hub/case_hub_11wl.png" alt="Waitlist" class="case-block__image">
+      </section>
+
+      <!-- Results -->
+      <section class="case-results" id="results">
+        <h2 class="case-results__title" data-i18n="caseHub.results.title">Результат</h2>
+
+        <div class="case-results__numbers">
+          <div class="case-results__item">
+            <span class="case-results__value">1.5m+</span>
+            <span class="case-results__label" data-i18n="caseHub.results.waitlist">Пользователей удалось привлечь в список ожидания перед запуском</span>
+          </div>
+          <div class="case-results__item">
+            <span class="case-results__value">2m+</span>
+            <span class="case-results__label" data-i18n="caseHub.results.traders">Трейдеров активировалось на запуске и произвели хотя бы 1 транзакцию</span>
+          </div>
+          <div class="case-results__item">
+            <span class="case-results__value" data-i18n="caseHub.results.dauValue">DAU 300к</span>
+            <span class="case-results__label" data-i18n="caseHub.results.dauDesc">На протяжении 6мес держалось на новой площадке → UI показывал адопшн</span>
+          </div>
+        </div>
+
+        <!-- Expandable details -->
+        <div class="case-results__details" id="results-details">
+          <div class="case-results__details-inner">
+            <p class="case-results__text" data-i18n="caseHub.results.details1">Blum Trading hub стал самой крупной мультичейн торговой площадкой в мире по количеству активированных трейдеров и крупнейшим приложением в экосистеме TON по выручке.</p>
+            <p class="case-results__text" data-i18n="caseHub.results.details2">У Blum изначально была большая user-base <span class="case-results__accent">(95m+)</span> и главная гипотеза бизнеса как раз и заключалась в том, чтобы узнать сколько процентов от этой базы удастся сконвертировать в активных трейдеров. В пике DAU Trading hub достигало <span class="case-results__accent">300к</span>, а DAU основного приложения порядка <span class="case-results__accent">30m+</span>.</p>
+            <p class="case-results__text" data-i18n="caseHub.results.details3">По опросам, многие пользователи экосистемы TON высоко оценивали дизайн Блума и это работало на повышение доверия к площадке как к профессиональной торговой системе. Дизайн департамент же был признан самым эффективным отделом в компании, спроектировал за 6 месяцев столько дизайн артефактов, что хватило бы на два года непрерывной разработки.</p>
+            <p class="case-results__text" data-i18n="caseHub.results.details4">К сожалению, результат сложно было закрепить и команда полностью поменяла фокус с мобильной платформы на Web-версию. Почему и зачем — в следующем кейсе.</p>
+          </div>
+        </div>
+
+        <button class="case-results__toggle" id="results-toggle">
+          <span class="case-results__toggle-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="case-results__toggle-text" data-i18n="caseHub.results.more">Подробнее</span>
+        </button>
+      </section>
+    </article>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer" id="footer">
+    <div class="footer__content">
+      <span class="footer__copy">Alex Lygin © 2026</span>
+      <span class="footer__version" data-i18n="footer.version">Версия 1.0</span>
+    </div>
+
+    <!-- Мобильное меню (скрыто на десктопе) -->
+    <nav class="footer__mobile-nav">
+      <a href="#" class="footer__link" data-i18n="header.cv" data-i18n-href="links.cv" target="_blank" rel="noopener">CV</a>
+      <a href="https://www.linkedin.com/in/alexlygin/" class="footer__link" target="_blank" rel="noopener">LinkedIn</a>
+      <a href="https://dribbble.com/jupel" class="footer__link" target="_blank" rel="noopener">Dribbble</a>
+      <a href="https://www.instagram.com/sasha_lygin" class="footer__link" target="_blank" rel="noopener" data-i18n="header.blog">Блог</a>
+      <a href="https://t.me/sasha_lygin" class="footer__link" target="_blank" rel="noopener" data-i18n="header.tg">ТГК</a>
+      <a href="mailto:lyginmail@gmail.com" class="footer__link" data-i18n="header.mail">Почта</a>
+    </nav>
+  </footer>
+
+  <!-- Mobile Menu Overlay -->
+  <div class="mobile-menu" id="mobile-menu">
+    <div class="mobile-menu__content">
+      <div class="mobile-menu__header">
+        <button class="mobile-menu__close" id="menu-close">
+          <img src="icons/Close_LG.svg" alt="Закрыть" width="16" height="16">
+        </button>
+      </div>
+      <nav class="mobile-menu__nav">
+        <a href="#" class="mobile-menu__link" data-i18n="header.cv" data-i18n-href="links.cv" target="_blank" rel="noopener">CV</a>
+        <a href="https://www.linkedin.com/in/alexlygin/" class="mobile-menu__link" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://dribbble.com/jupel" class="mobile-menu__link" target="_blank" rel="noopener">Dribbble</a>
+        <a href="https://www.instagram.com/sasha_lygin" class="mobile-menu__link" target="_blank" rel="noopener" data-i18n="header.blog">Блог</a>
+        <a href="https://t.me/sasha_lygin" class="mobile-menu__link" target="_blank" rel="noopener" data-i18n="header.tg">ТГК</a>
+        <a href="mailto:lyginmail@gmail.com" class="mobile-menu__link" data-i18n="header.mail">Почта</a>
+        <button class="mobile-menu__link" id="menu-lang-toggle" data-i18n="header.lang">RU</button>
+      </nav>
+      <div class="mobile-menu__footer">
+        <img src="icons/lgn.svg" alt="LGN">
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/main.js"></script>
+  <script>
+    // Логика раскрытия блока результатов
+    (function() {
+      const toggle = document.getElementById('results-toggle');
+      const details = document.getElementById('results-details');
+      const results = document.getElementById('results');
+
+      if (toggle && details && results) {
+        toggle.addEventListener('click', function() {
+          const isExpanded = results.classList.contains('is-expanded');
+
+          if (isExpanded) {
+            results.classList.remove('is-expanded');
+            toggle.querySelector('.case-results__toggle-text').textContent =
+              document.documentElement.lang === 'en' ? 'More details' : 'Подробнее';
+          } else {
+            results.classList.add('is-expanded');
+            toggle.querySelector('.case-results__toggle-text').textContent =
+              document.documentElement.lang === 'en' ? 'Hide' : 'Скрыть';
+          }
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
