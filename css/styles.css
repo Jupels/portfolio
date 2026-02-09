@@ -1144,14 +1144,16 @@ button {
 .case-cover__image-wrapper--centered {
   display: flex;
   justify-content: center;
+  align-items: center;
   background-color: var(--color-bg-card);
   border-radius: 20px;
   padding: 20px;
+  overflow: hidden;
 }
 
 .case-cover__image--auto {
   width: auto;
-  max-width: 100%;
+  max-width: 604px;
   height: auto;
   background-color: transparent;
   border-radius: 0;
@@ -1392,5 +1394,9 @@ button {
   .case-cover__image-wrapper--centered {
     padding: 12px;
     border-radius: var(--border-radius-small);
+  }
+
+  .case-cover__image--auto {
+    max-width: 100%;
   }
 }
