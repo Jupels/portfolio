@@ -278,8 +278,8 @@
         if (e.target.closest('a')) return;
 
         const link = card.querySelector('a');
-        if (link) {
-          link.click();
+        if (link && link.href) {
+          window.location.href = link.href;
         }
       });
     });
