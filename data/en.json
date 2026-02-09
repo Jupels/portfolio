@@ -136,5 +136,63 @@
       "details3": "According to surveys, many TON ecosystem users highly rated Blum's design, which helped build trust in the platform as a professional trading system. The design department was recognized as the most efficient division in the company, producing enough design artifacts in 6 months to last two years of continuous development.",
       "details4": "Unfortunately, the result was hard to sustain and the team completely shifted focus from the mobile platform to the Web version. Why and for what — in the next case study."
     }
+  },
+
+  "caseTasks": {
+    "tags": {
+      "cases": "Cases"
+    },
+    "intro": {
+      "title": "How a small icon in task statuses reduced support engineer workload from "
+    },
+    "team": {
+      "design": "Design",
+      "designers": "2 designers",
+      "support": "Support",
+      "supportCount": "2 Support engineers",
+      "product": "Product",
+      "productCount": "1 Product manager"
+    },
+    "role": {
+      "label": "My role",
+      "value": "Senior Product Designer"
+    },
+    "cover": {
+      "task": "Challenge",
+      "taskDesc": "Reduce support workload by making task completion statuses clearer.",
+      "results": "Results",
+      "resultsDesc": "Share of tickets related to task completion verification dropped from",
+      "resultsDesc2": " among all support requests."
+    },
+    "problem": {
+      "title": "Problem",
+      "desc": "Completed tasks took a long time to validate and the spinner users saw after completion could spin for up to 24 hours. Users worried they wouldn't get their reward and went to complain to support."
+    },
+    "intersection": "But we couldn't touch the backend — any small change turned into a multi-week cohort rollout (90M users is no joke)",
+    "context": {
+      "desc": "The task was small, but no one took it on due to massive workload across all tracks + all designers were on vacation. Had to move fast. To save time, I started by cutting the unnecessary."
+    },
+    "solutions": {
+      "title": "Solution options",
+      "desc": "Created about 7 solutions from design system patterns. Selected the most adequate: Banner appearing over tasks; popover on hover over changed icon; top notification and modal."
+    },
+    "testing": {
+      "title": "Testing",
+      "desc": "Of all options, only one didn't interrupt the main flow, didn't distract users from other actions, and appeared only on request. We tested it with a focus group, where 77% immediately understood what the icon meant (survey)."
+    },
+    "colors": {
+      "title": "Color alternatives",
+      "desc": "We explored alternative color schemes, but bright tones looked odd for hints + some resembled errors."
+    },
+    "final": {
+      "title": "Rolled out two solutions at once:",
+      "desc": "Now: if task verification took more than 7 seconds, we changed the spinner to a clock icon on the frontend + gave a hint on click."
+    },
+    "results": {
+      "title": "Result",
+      "text1": "Share of tickets related to task completion verification was up to ",
+      "text2": "among all support requests. We reduced it to",
+      "text3": "Task was done and rolled out to all users in "
+    }
   }
 }
