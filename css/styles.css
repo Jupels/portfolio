@@ -682,6 +682,15 @@ button {
   border-radius: var(--border-radius-small);
 }
 
+/* Mini case card (Yandex Vzglyad) */
+.case-card--mini {
+  gap: 40px;
+}
+
+.case-card--mini .case-card__image--rounded {
+  border-radius: 8px;
+}
+
 /* Cases: Mobile */
 @media (max-width: 639px) {
   .cases {
@@ -719,6 +728,10 @@ button {
 
   .widget-card__gif {
     width: 150px;
+  }
+
+  .case-card--mini {
+    gap: 30px;
   }
 }
 
