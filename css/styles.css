@@ -664,10 +664,9 @@ button {
   text-align: center;
 }
 
-.widget-card__placeholder {
-  width: 180px;
-  height: 180px;
-  background-color: var(--color-border);
+.widget-card__gif {
+  max-width: 180px;
+  height: auto;
   border-radius: var(--border-radius-small);
 }
 
@@ -706,9 +705,8 @@ button {
     border-radius: 20px;
   }
 
-  .widget-card__placeholder {
-    width: 150px;
-    height: 150px;
+  .widget-card__gif {
+    max-width: 150px;
   }
 }
 

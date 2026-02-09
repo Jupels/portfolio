@@ -81,3 +81,13 @@
 - `.gitignore` — правила игнорирования
 - `icons/Close_LG.svg` — иконка закрытия
 - `icons/lgn.svg` — логотип LGN
+
+---
+
+## [2026-02-09] session-1770632796
+
+### Виджеты с GIF-анимациями
+
+- Добавлены GIF-анимации в виджеты на главной странице
+- Заменены плейсхолдеры на img/gif/gif1.gif и img/gif/gif2.gif
+- Обновлены CSS стили: .widget-card__placeholder → .widget-card__gif
