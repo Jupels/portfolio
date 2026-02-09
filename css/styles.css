@@ -234,17 +234,6 @@ button {
   cursor: pointer;
 }
 
-.case-card--link .btn-dark {
-  position: static;
-}
-
-.case-card--link .btn-dark::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-}
-
 .case-card--link:hover .btn-dark {
   transform: translateY(-1px);
   box-shadow:
