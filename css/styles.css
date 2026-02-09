@@ -229,6 +229,29 @@ button {
   position: relative;
 }
 
+/* Кликабельная карточка — весь блок ведёт на страницу кейса */
+.case-card--link {
+  cursor: pointer;
+}
+
+.case-card--link .btn-dark {
+  position: static;
+}
+
+.case-card--link .btn-dark::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.case-card--link:hover .btn-dark {
+  transform: translateY(-1px);
+  box-shadow:
+    0 10px 16px rgba(55, 55, 55, 0.2),
+    inset 0 0 14px 0 white;
+}
+
 /* Плашка Coming Soon (SVG) */
 .coming-soon {
   position: absolute;
