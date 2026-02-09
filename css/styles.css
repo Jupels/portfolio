@@ -1178,7 +1178,7 @@ button {
 .case-results__summary {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 40px;
 }
 
 .case-results__text--large {
