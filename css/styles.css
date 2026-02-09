@@ -1165,26 +1165,19 @@ button {
 }
 
 .case-results--simple {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
   border: 3px dashed #d9d9d9;
   padding: 40px;
   border-radius: 20px;
   margin-top: 20px;
 }
 
-.case-results--simple .case-results__title {
-  margin-bottom: 40px;
-}
-
-.case-results__summary {
-  display: flex;
-  flex-direction: column;
-  gap: 40px;
-}
-
 .case-results__text--large {
   font-size: 24px;
   line-height: 36px;
-  color: var(--color-tertiary);
+  color: var(--color-muted);
 }
 
 /* Case Page: Tablet (640px) */
@@ -1383,12 +1376,9 @@ button {
   }
 
   .case-results--simple {
+    gap: 20px;
     padding: 20px;
     border-radius: var(--border-radius-small);
-  }
-
-  .case-results--simple .case-results__title {
-    margin-bottom: 20px;
   }
 
   .case-results__text--large {
