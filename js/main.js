@@ -269,6 +269,20 @@
     menuLinks.forEach(link => {
       link.addEventListener('click', closeMobileMenu);
     });
+
+    // Кликабельные карточки кейсов
+    const clickableCards = document.querySelectorAll('.case-card--link');
+    clickableCards.forEach(card => {
+      card.addEventListener('click', (e) => {
+        // Не перехватываем клик по самой ссылке
+        if (e.target.closest('a')) return;
+
+        const link = card.querySelector('a');
+        if (link) {
+          link.click();
+        }
+      });
+    });
   }
 
   // Запускаем при загрузке DOM
