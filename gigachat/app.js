@@ -68,6 +68,26 @@
   const SYS_RESULT = 'Ты — ГигаЧат. Все шаги задачи выполнены. Собери итоговый результат, готовый к использованию: документ, план, расчёт или подборку. ' +
     'Структурируй его: заголовки, списки, таблицы — где уместно. Не пересказывай шаги, дай сам результат. В конце — 1–2 строки «Что дальше».';
 
+  // Общий чат: несколько людей в одном треде
+  const SYS_GROUP = 'Это общий чат: в нём переписываются несколько человек, каждая их реплика подписана именем («Имя: текст»), ' +
+    'служебные события — в квадратных скобках. Отвечай всем сразу одним сообщением; если вопросов несколько — разбери каждый и обращайся по имени, ' +
+    'чтобы было понятно, кому что. Не угадывай пол участников по имени — пиши нейтрально. Не начинай ответ с подписи и не пиши реплики за участников.';
+
+  const SYS_RPG = 'Ты — ГигаЧат в роли ведущего (мастера) настольной ролевой игры в жанре фэнтези-приключения. ' +
+    'Играют несколько человек: их реплики подписаны именами («Имя: текст»), события и броски кубиков — в квадратных скобках.\n' +
+    'Правила ведущего:\n' +
+    '— пиши по-русски, живо и образно, 80–180 слов за ход, в Markdown; **жирным** — важные имена, предметы и места;\n' +
+    '— реагируй на действия каждого игрока и называй его по имени (или по имени его героя); не решай за игроков, что они делают, говорят и чувствуют;\n' +
+    '— не угадывай пол игрока или героя по имени: пока героя не описали, обращайся нейтрально («твой герой», «ты»), потом — как описал сам игрок;\n' +
+    '— если исход действия неочевиден, делай проверку: бери значения из «Броски на этот ход» строго по порядку и пиши так: «Проверка ловкости — d20: 14, успех». ' +
+    'Сложность: 10 — обычная, 15 — трудная, 20 — почти невозможная. Не выдумывай броски сверх списка;\n' +
+    '— если игрок сам бросил кубик, это проверка его действия: обязательно назови его бросок и исход («Лира, твой d20: 18 — успех») и не бери для этого действия значение из списка;\n' +
+    '— у сцены есть цель, угроза и тайна; давай игрокам выбор и последствия;\n' +
+    '— заканчивай ход вопросом «Что делаете?» или обращением к конкретному игроку;\n' +
+    '— приключенческий тон без жестокости; не выходи из роли, пока тебя явно не попросят.';
+  const RPG_START = '[Начало игры. Коротко поприветствуй игроков, в 2–3 предложениях задай завязку приключения и первую сцену ' +
+    'и попроси каждого представить своего героя: имя, кто он и одна яркая черта.]';
+
   /* =====================================================================
      Заготовки: придуманные чаты, подчаты в папках, карточки задач
      ===================================================================== */
@@ -119,7 +139,14 @@
   /* =====================================================================
      Хранилище (localStorage) и состояние
      ===================================================================== */
-  const STORE_KEY = 'giga.v1';
+  // Вкладка, открытая по приглашению в общий чат, хранит всё отдельно — иначе гость и
+  // создатель в одном браузере затирали бы друг другу переписку.
+  const GS = window.GigaShare || null;
+  const JOIN = (() => {
+    const m = /^#join=([a-z0-9]{6,32})\.([a-z0-9]{6,32})$/.exec(location.hash);
+    return m ? { host: m[1], share: m[2] } : null;
+  })();
+  const STORE_KEY = JOIN ? 'giga.v1.guest' : 'giga.v1';
   const state = load();
   const runtime = { activeId: null, ctrl: {} }; // ctrl: AbortController активного запроса по id треда
 
@@ -154,7 +181,8 @@
 
   const threadList = () => Object.values(state.threads).sort((a, b) => b.updatedAt - a.updatedAt);
   const activeThread = () => state.threads[runtime.activeId];
-  const isBusy = t => !!runtime.ctrl[t.id];
+  // у гостя общего чата модель вызывает создатель — «занят», пока его ответ идёт потоком
+  const isBusy = t => !!runtime.ctrl[t.id] || (t.shared?.role === 'guest' && lastAssistant(t)?.status === 'streaming');
   const taskActive = t => !!t.task && isBusy(t) && (t.task.status === 'running' || t.task.status === 'planning');
   const touch = t => { t.updatedAt = Date.now(); };
   const lastAssistant = t => { for (let i = t.messages.length - 1; i >= 0; i--) if (t.messages[i].role === 'assistant') return t.messages[i]; return null; };
@@ -192,7 +220,11 @@
         signal,
       });
     }
-    if (!CFG.openrouterKey) throw new Error('Сначала введите пароль на странице');
+    if (!CFG.openrouterKey) {
+      // гость общего чата заводит свой чат — для этого нужен пароль прототипа
+      const ok = window.GIGA_GATE ? await window.GIGA_GATE.ensure() : false;
+      if (!ok || !CFG.openrouterKey) throw Object.assign(new Error('Чтобы начать свой чат, нужен пароль от прототипа'), { keep: true });
+    }
     const cfg = PURPOSES[purpose];
     const useThink = think && (purpose === 'chat' || purpose === 'result');
     const payload = {
@@ -225,7 +257,7 @@
     try {
       res = await request(purpose, messages, think, signal);
     } catch (err) {
-      if (err.name === 'AbortError') throw err;
+      if (err.name === 'AbortError' || err.keep) throw err;
       throw new Error(isDirect() ? 'Нет связи с OpenRouter — проверьте интернет' : 'Нет связи с сервером. Запустите node server.js');
     }
     if (res.headers.get('X-Mock') === '1' && !mockNoted) {
@@ -272,6 +304,7 @@
   }
 
   function buildMessages(t, system, exclude) {
+    if (isGroup(t)) return groupMessages(t, exclude);
     const out = [{ role: 'system', content: system }];
     const hist = t.messages.filter(m => m !== exclude && m.status !== 'error');
     for (const m of hist.slice(-20)) {
@@ -312,12 +345,16 @@
   const chatSend = $('#chatSend');
   const chatComposer = $('.chat-composer');
   const chatModel = $('#chatModel');
+  const chatDice = $('#chatDice');
   let activeChip = null;
 
   function setView(view) {
     closeModelMenu();
     closePlusMenu();
     stopSpeaking();
+    closeInvite();
+    closeDice();
+    if (view !== 'chat') typingOff();
     card.dataset.view = view;
     if (view !== 'chat') runtime.activeId = null;
     $('#navVideo').classList.toggle('is-active', view === 'video');
@@ -406,16 +443,22 @@
     if (!state.threads[id]) return;
     stopSpeaking();
     closeModelMenu();
+    closeInvite();
+    closeDice();
     setIdeas(false);
+    if (runtime.activeId && runtime.activeId !== id) typingOff();
     runtime.activeId = id;
     card.dataset.view = 'chat';
     closePlusMenu();
     setTool('chat', null);
     chatInput.value = '';
     autoGrow();
+    const t = state.threads[id];
+    if (isGuest(t)) guestEnsure(t);
     syncChatComposer();
     renderThread(true);
     renderSidebar();
+    renderShareUI();
     chatInput.focus({ preventScroll: true });
   }
 
@@ -438,10 +481,14 @@
     m.id = m.id || uid();
     t.messages.push(m);
     touch(t);
+    shareMsg(t, m, true);
     if (runtime.activeId === t.id) {
       const prev = t.messages.slice(0, -1).reverse().find(x => x.role === 'assistant');
-      threadEl.insertAdjacentHTML('beforeend', msgHTML(t, m));
-      threadEl.lastElementChild.classList.add('enter');
+      // новое сообщение встаёт перед «Аня пишет…», если оно показано
+      const typingEl = threadEl.querySelector('.typing-row');
+      if (typingEl) typingEl.insertAdjacentHTML('beforebegin', msgHTML(t, m));
+      else threadEl.insertAdjacentHTML('beforeend', msgHTML(t, m));
+      threadEl.querySelector(`[data-mid="${m.id}"]`)?.classList.add('enter');
       if (prev) updateMsgEl(t, prev); // у прошлого ответа пропадают подсказки
       scrollToBottom(true);
     }
@@ -450,6 +497,7 @@
   function removeMsg(t, m) {
     const i = t.messages.indexOf(m);
     if (i >= 0) t.messages.splice(i, 1);
+    if (isHosted(t)) sendAll(t, { t: 'del', id: m.id });
     threadEl.querySelector(`[data-mid="${m.id}"]`)?.remove();
   }
 
@@ -492,12 +540,15 @@
       renderSidebar();
     }
     if (msg.status === 'done' && kind !== 'result') fetchMeta(t, msg);
+    if (isGroup(t)) afterTurn(t);
     return msg;
   }
 
   // Название чата, подсказки-продолжения и признак «это задача» — одним дешёвым запросом.
   async function fetchMeta(t, msg) {
-    const q = [...t.messages].reverse().find(m => m.role === 'user')?.content || '';
+    const q = isGroup(t)
+      ? t.messages.filter(m => m.role === 'user').slice(-4).map(m => humanLine(t, m)).join('\n')
+      : [...t.messages].reverse().find(m => m.role === 'user')?.content || '';
     try {
       const raw = await api('meta', [
         { role: 'system', content: SYS_META },
@@ -507,10 +558,11 @@
       if (!j) return;
       msg.suggestions = (Array.isArray(j.suggestions) ? j.suggestions : [])
         .filter(s => typeof s === 'string' && s.trim()).slice(0, 2).map(s => s.trim().slice(0, 60));
-      msg.isTask = t.mode === 'ask' && j.isTask === true;
+      msg.isTask = t.mode === 'ask' && !isGroup(t) && j.isTask === true;
       if (!t.titleLocked && !t.titleSet && typeof j.title === 'string' && j.title.trim()) {
         t.title = shortTitle(j.title.replace(/["«»]/g, ''));
         t.titleSet = true;
+        sendMeta(t);
       }
       save();
       updateMsgEl(t, msg);
@@ -528,12 +580,14 @@
     const t = activeThread();
     if (!t) return;
     threadEl.innerHTML = t.messages.map(m => msgHTML(t, m)).join('');
+    renderTyping(false);
     if (toEnd) chatScroll.scrollTop = chatScroll.scrollHeight;
   }
 
   const pendingUpdates = new Map();
   let raf = 0;
   function scheduleUpdate(t, m) {
+    shareMsg(t, m); // гостям — напрямую: в фоновой вкладке requestAnimationFrame не срабатывает
     pendingUpdates.set(m.id, [t, m]);
     if (raf) return;
     raf = requestAnimationFrame(() => {
@@ -543,6 +597,7 @@
     });
   }
   function updateMsgEl(t, m) {
+    shareMsg(t, m);
     if (runtime.activeId !== t.id) return;
     const el = threadEl.querySelector(`[data-mid="${m.id}"]`);
     if (!el) return;
@@ -558,9 +613,28 @@
   const scrollToBottom = smooth => chatScroll.scrollTo({ top: chatScroll.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
 
   function msgHTML(t, m) {
+    if (m.role === 'event') return `<div class="msg msg-event" data-mid="${m.id}">${esc(m.text)}</div>`;
     if (m.role === 'user') {
+      // в общем чате все люди справа: свои — как обычно, у чужих имя и свой оттенок
+      let cls = '', style = '', head = '';
+      if (isGroup(t)) {
+        const first = startsRun(t, m);
+        if (!first) cls += ' is-cont';
+        if (!isMine(t, m)) {
+          const tn = tint(t, authorId(m));
+          cls += ' is-other';
+          style = ` style="--tint:${tn.bg};--tint-av:${tn.av};--tint-fg:${tn.fg}"`;
+          const name = authorName(t, m);
+          if (first) head = `<div class="msg-author"><span class="av av-sm">${esc(initial(name))}</span>${esc(name)}</div>`;
+        }
+      }
+      if (m.kind === 'roll') {
+        return `<div class="msg msg-user msg-roll${cls}" data-mid="${m.id}"${style}>${head}` +
+          `<div class="roll-pill" title="Бросок кубика d${m.die}"><img src="assets/chip-dice.svg" width="22" height="22" alt="">` +
+          `<span class="roll-die">d${m.die}</span><span class="roll-arrow">→</span><b>${m.value}</b></div></div>`;
+      }
       const tag = m.tool && TOOLS[m.tool] ? `<div class="bubble-tag">${svgIcon(TOOLS[m.tool].icon)}${TOOLS[m.tool].tag}</div>` : '';
-      return `<div class="msg msg-user" data-mid="${m.id}">${tag}<div class="bubble">${esc(m.content)}</div>` +
+      return `<div class="msg msg-user${cls}" data-mid="${m.id}"${style}>${head}${tag}<div class="bubble">${esc(m.content)}</div>` +
         `<button class="act" data-act="copy" title="Копировать">${ICON('copy')}</button></div>`;
     }
     if (m.kind === 'plan') return `<div class="msg msg-ai msg-plan" data-mid="${m.id}">${planHTML(t, m)}</div>`;
@@ -577,18 +651,21 @@
     }
     if (m.content) h += `<div class="md">${renderMd(m.content)}</div>`;
     else if (m.status === 'streaming' && !m.reasoning) h += `<div class="typing">${DOTS}${t.model === 'think' ? 'Думаю…' : 'Печатает…'}</div>`;
-    if (m.status === 'error') h += `<div class="msg-error">${esc(m.error || 'Не удалось получить ответ')}<button class="link-btn" data-act="retry">Повторить</button></div>`;
+    if (m.status === 'error') {
+      h += `<div class="msg-error">${esc(m.error || 'Не удалось получить ответ')}` +
+        `${isGuest(t) ? '' : '<button class="link-btn" data-act="retry">Повторить</button>'}</div>`;
+    }
     if (m.status === 'stopped') h += '<div class="msg-note">Ответ остановлен</div>';
-    if ((m.status === 'done' || m.status === 'stopped') && m.content) h += actionsHTML(m);
+    if ((m.status === 'done' || m.status === 'stopped') && m.content) h += actionsHTML(t, m);
     if (m.status === 'done' && lastAssistant(t) === m && !isBusy(t)) h += suggHTML(t, m);
     return h + '</div>';
   }
 
-  function actionsHTML(m) {
+  function actionsHTML(t, m) {
     return '<div class="ai-actions">' +
       `<button class="act${m.liked === 1 ? ' is-on' : ''}" data-act="like" title="Хороший ответ">${ICON('like')}</button>` +
       `<button class="act${m.liked === -1 ? ' is-on' : ''}" data-act="dislike" title="Плохой ответ">${ICON('dislike')}</button>` +
-      `<button class="act" data-act="regen" title="Сгенерировать заново">${ICON('regenerate')}</button>` +
+      (isGuest(t) ? '' : `<button class="act" data-act="regen" title="Сгенерировать заново">${ICON('regenerate')}</button>`) +
       `<button class="act${speakingId === m.id ? ' is-on' : ''}" data-act="speak" title="Прочитать вслух">${ICON('read-aloud')}</button>` +
       `<button class="act" data-act="podcast" title="Сделать подкаст">${ICON('podcast')}</button>` +
       '<span class="spacer"></span>' +
@@ -814,12 +891,15 @@
         if (m.liked) toast('Спасибо за оценку');
         save(); updateMsgEl(t, m); break;
       }
-      case 'regen': regenerate(t, m); break;
-      case 'retry': regenerate(t, m); break;
+      case 'regen':
+      case 'retry': if (!isGuest(t)) regenerate(t, m); break;
       case 'speak': speak(t, m); break;
       case 'podcast': toast('Подкасты в прототипе не подключены'); break;
       case 'reasoning': m.reasoningOpen = !m.reasoningOpen; updateMsgEl(t, m); break;
-      case 'suggest': if (!isBusy(t)) sendAsk(t, b.dataset.text); break;
+      case 'suggest':
+        if (isGroup(t)) say(t, b.dataset.text);
+        else if (!isBusy(t)) sendAsk(t, b.dataset.text);
+        break;
       case 'handoff': if (!isBusy(t)) handoff(t); break;
       case 'run': runTask(t); break;
       case 'continue-task': if (t.task?.plan) runTask(t); else makePlan(t); break;
@@ -878,6 +958,8 @@
     chatInput.style.height = Math.min(chatInput.scrollHeight, 156) + 'px';
   }
   function placeholderFor(t) {
+    if (t.preset === 'rpg') return 'Что делает ваш герой?';
+    if (isGroup(t) && t.shared) return 'Напишите в общий чат';
     if (t.mode !== 'task') return 'Спросите ГигаЧат';
     const st = t.task?.status;
     if (st === 'preview') return t.editing ? 'Что поменять в плане?' : 'Уточните задачу или поменяйте план';
@@ -892,9 +974,18 @@
     chatView.dataset.cmode = cmode;
     chatToggle.dataset.mode = cmode;
     $$('.seg', chatToggle).forEach(s => s.setAttribute('aria-selected', String(s.dataset.cmode === cmode)));
+    // общий чат: без «Поручить» и «+», у гостя нет выбора модели, у ролевой игры — кубики
+    const group = isGroup(t);
+    chatView.classList.toggle('is-group', group);
+    chatView.classList.toggle('is-guest', isGuest(t));
+    chatDice.hidden = t.preset !== 'rpg';
+    const off = isGuest(t) && !(sh.guest?.tid === t.id && sh.guest.status === 'online');
+    chatComposer.classList.toggle('is-off', off);
+    chatInput.disabled = off;
     const busy = isBusy(t);
     const has = !!chatInput.value.trim();
-    const steerable = busy && t.task?.status === 'running' && has;
+    // в общем чате писать можно и пока ГигаЧат отвечает — сообщение встанет в очередь
+    const steerable = busy && has && (group || t.task?.status === 'running');
     chatSend.classList.toggle('has-text', has);
     chatSend.classList.toggle('is-busy', busy && !steerable);
     chatComposer.classList.toggle('has-text', has);
@@ -902,14 +993,14 @@
     chatSend.title = busy && !steerable ? 'Остановить' : has ? 'Отправить' : 'Голосовой режим';
     chatInput.placeholder = placeholderFor(t);
   }
-  chatInput.addEventListener('input', () => { autoGrow(); syncChatComposer(); });
+  chatInput.addEventListener('input', () => { autoGrow(); syncChatComposer(); noteTyping(); });
   chatInput.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendInChat(); }
   });
   chatSend.addEventListener('click', () => {
     const t = activeThread();
     if (!t) return;
-    if (chatSend.classList.contains('is-busy')) { runtime.ctrl[t.id]?.abort(); return; }
+    if (chatSend.classList.contains('is-busy')) { stopAnswer(t); return; }
     if (chatInput.value.trim()) sendInChat();
     else toast('Голосовой режим в прототипе не подключён');
   });
@@ -918,6 +1009,13 @@
     const t = activeThread();
     const text = chatInput.value.trim();
     if (!t || !text) return;
+    if (isGroup(t)) {
+      chatInput.value = '';
+      autoGrow();
+      if (!say(t, text)) { chatInput.value = text; autoGrow(); }
+      syncChatComposer();
+      return;
+    }
     const st = t.task?.status;
     // пока идёт ответ, писать можно только уточнения к выполняемой задаче
     if (isBusy(t) && !(t.mode === 'task' && st === 'running')) return;
@@ -971,11 +1069,12 @@
   }
 
   function renderRecent() {
-    const row = ({ tid, seed, title, active, spin }) =>
-      `<a class="chat-row${active ? ' is-active' : ''}" ${tid ? `data-tid="${tid}"` : `data-seed="${seed}"`} title="${esc(title)}">` +
-      `<span>${esc(title)}</span>${spin ? SPIN16 : ''}</a>`;
+    const row = ({ tid, seed, title, active, spin, shared }) =>
+      `<a class="chat-row${active ? ' is-active' : ''}" ${tid ? `data-tid="${tid}"` : `data-seed="${seed}"`} title="${esc(title)}${shared ? ' — общий чат' : ''}">` +
+      `<span>${esc(title)}</span>${shared ? '<img class="row-ico" src="assets/icon-people.svg" width="16" height="16" alt="">' : ''}${spin ? SPIN16 : ''}</a>`;
     const rows = threadList().filter(t => !t.folder).map(t => row({
       tid: t.id, title: t.title, active: t.id === runtime.activeId, spin: taskActive(t),
+      shared: !!t.shared,
     }));
     const seeds = Object.entries(SEEDS)
       .filter(([k]) => k.startsWith('r:') && !state.threads[state.seeds[k]])
@@ -1369,7 +1468,7 @@
     opt.addEventListener('click', () => {
       const chip = activeChip;
       setChipModel(chip, opt.dataset.model);
-      if (chip === chatModel && activeThread()) { activeThread().model = opt.dataset.model; save(); }
+      if (chip === chatModel && activeThread()) { activeThread().model = opt.dataset.model; save(); sendMeta(activeThread()); }
       closeModelMenu();
     });
   });
@@ -1461,6 +1560,8 @@
     if (!search.hidden) { closeSearch(); return; }
     if (plusCtx) { const b = plusCtx.btn; closePlusMenu(); b.focus(); return; }
     if (activeChip) { const c = activeChip; closeModelMenu(); c.focus(); return; }
+    if (diceOpen) { closeDice(); chatDice.focus(); return; }
+    if (!invitePop.hidden) { closeInvite(); inviteBtn.focus(); return; }
     if (card.dataset.ideas === 'true') setIdeas(false);
   });
 
@@ -1606,8 +1707,914 @@
   requestAnimationFrame(tick);
 
   /* =====================================================================
+     Общий чат: друзья пишут в один тред, ГигаЧат отвечает всем.
+     Хост — браузер того, кто пригласил: он хранит тред, вызывает модель своим
+     ключом и рассылает события гостям. Ключ никуда не уходит, гостю пароль не нужен.
+     ===================================================================== */
+  const HOST_PID = 'h';
+  const NAME_KEY = JOIN ? 'giga.guestName' : 'giga.name';
+  const DICE = [4, 6, 8, 10, 12, 20];
+  const MAX_GUESTS = 5;
+  const SNAPSHOT = 150;
+  // оттенки участников: фон пузыря, кружок аватара, текст
+  const TINTS = [
+    { bg: '#efebfd', av: '#dcd3fa', fg: '#4a3a8c' },
+    { bg: '#e7f5ee', av: '#c8eadb', fg: '#1f6646' },
+    { bg: '#fdefe6', av: '#f7d8c3', fg: '#88481d' },
+    { bg: '#e8f0fc', av: '#cfdff8', fg: '#214c86' },
+    { bg: '#fcedf1', av: '#f5d0db', fg: '#882746' },
+  ];
+  const GUEST_TINTS = [0, 1, 2, 4];
+  const HOST_TINT = 3;
+
+  const cleanName = s => String(s || '').replace(/[\u0000-\u001f\u007f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 24);
+  const validPid = s => (typeof s === 'string' && /^(h|g[a-z0-9]{6})$/.test(s) ? s : null);
+  const initial = name => (Array.from(String(name || '?').trim())[0] || '?').toUpperCase();
+
+  const sh = {
+    name: '',            // моё имя в общих чатах
+    host: null,          // постоянный peer создателя
+    hostState: 'idle',   // connecting | online | reconnecting | busy
+    links: new Set(),    // у создателя: соединения гостей { conn, tid, pid, last, typingAt, quiet }
+    typing: {},          // tid → { pid: { name, until } }
+    turns: {},           // tid → { timer, pending, since } — очередь ответа ГигаЧата
+    leaveTimers: {},
+    guest: null,         // у гостя: соединение с создателем открытого общего чата
+  };
+  try { sh.name = cleanName(localStorage.getItem(NAME_KEY)); } catch {}
+  function setMyName(n) { sh.name = n; try { localStorage.setItem(NAME_KEY, n); } catch {} }
+
+  const isGroup = t => !!(t && (t.shared || t.preset));
+  const isGuest = t => t?.shared?.role === 'guest';
+  const isHosted = t => t?.shared?.role === 'host' && !!t.shared.active;
+  const myPid = t => (isGuest(t) ? t.shared.me : HOST_PID);
+  const hostName = () => sh.name || 'Создатель чата';
+  const authorId = m => m.author?.id || HOST_PID;
+  const isMine = (t, m) => authorId(m) === myPid(t);
+  function personName(t, pid, fallback) {
+    if (pid === HOST_PID && !isGuest(t)) return hostName();
+    return t.shared?.people?.[pid]?.name || fallback || (pid === HOST_PID ? 'Создатель чата' : 'Гость');
+  }
+  const authorName = (t, m) => personName(t, authorId(m), m.author?.name);
+  const tintByIndex = c => TINTS[(Number.isInteger(c) ? c : 0) % TINTS.length];
+  const tint = (t, pid) => tintByIndex(pid === HOST_PID ? HOST_TINT : t.shared?.people?.[pid]?.c);
+  // имя показываем над первой репликой подряд одного человека
+  function startsRun(t, m) {
+    const i = t.messages.indexOf(m);
+    const prev = i > 0 ? t.messages[i - 1] : null;
+    return !prev || prev.role !== 'user' || authorId(prev) !== authorId(m);
+  }
+  function humanLine(t, m) {
+    const name = authorName(t, m);
+    return m.kind === 'roll' ? `[${name} бросает d${m.die}: выпало ${m.value}]` : `${name}: ${String(m.content || '').slice(0, 4000)}`;
+  }
+
+  // Честный бросок: криптослучайность без перекоса по модулю
+  function rollDie(n) {
+    const a = new Uint32Array(1);
+    const lim = Math.floor(0x100000000 / n) * n;
+    do crypto.getRandomValues(a); while (a[0] >= lim);
+    return (a[0] % n) + 1;
+  }
+
+  // Контекст для модели: реплики подписаны именами, события и броски — в скобках
+  function groupMessages(t, exclude) {
+    const rpg = t.preset === 'rpg';
+    const names = [...new Set([sh.name, ...Object.values(t.shared?.people || {}).map(p => p.name)].filter(Boolean))];
+    let sys = rpg ? SYS_RPG : `${SYS_ASK}\n\n${SYS_GROUP}`;
+    if (names.length) sys += `\n\nУчастники чата: ${names.join(', ')}.`;
+    if (rpg) {
+      const d20 = Array.from({ length: 4 }, () => rollDie(20)).join(', ');
+      sys += `\n\nБроски на этот ход (бери по порядку и только когда нужна проверка): d20 — ${d20}; d6 — ${rollDie(6)}, ${rollDie(6)}.`;
+    }
+    const out = [{ role: 'system', content: sys }];
+    if (rpg) out.push({ role: 'user', content: RPG_START });
+    const hist = t.messages.filter(m => m !== exclude && m.status !== 'error');
+    for (const m of hist.slice(-36)) {
+      if (m.role === 'event') out.push({ role: 'user', content: `[${m.text}]` });
+      else if (m.role === 'user') out.push({ role: 'user', content: humanLine(t, m) });
+      else if (m.kind === 'plan' && (m.task || t.task)?.plan) out.push({ role: 'assistant', content: planAsText(m.task || t.task) });
+      else if (m.content) out.push({ role: 'assistant', content: m.content.slice(0, 8000) });
+    }
+    return out.reduce((acc, m) => {
+      const prev = acc[acc.length - 1];
+      if (prev && prev.role === m.role && m.role !== 'system') prev.content += '\n' + m.content;
+      else acc.push({ ...m });
+      return acc;
+    }, []);
+  }
+
+  /* ---------- Очередь ответа: ГигаЧат ждёт, пока все допишут ---------- */
+  const someoneTyping = t => Object.values(sh.typing[t.id] || {}).some(v => v.until > Date.now());
+  function needsAnswer(t) {
+    for (let i = t.messages.length - 1; i >= 0; i--) {
+      const m = t.messages[i];
+      if (m.role === 'event') { if (m.reply) return true; continue; }
+      return m.role === 'user';
+    }
+    return false;
+  }
+  function queueTurn(t) {
+    const q = sh.turns[t.id] || (sh.turns[t.id] = { timer: 0, pending: false, since: 0 });
+    if (isBusy(t)) { q.pending = true; return; }
+    clearTimeout(q.timer);
+    if (!q.since) q.since = Date.now();
+    q.timer = setTimeout(() => fireTurn(t), onlineLinks(t).length ? 1500 : 300);
+  }
+  function fireTurn(t) {
+    const q = sh.turns[t.id];
+    if (!q) return;
+    q.timer = 0;
+    if (isBusy(t)) { q.pending = true; return; }
+    // пока кто-то печатает — ждём, но не дольше 8 секунд
+    if (someoneTyping(t) && Date.now() - q.since < 8000) { q.timer = setTimeout(() => fireTurn(t), 600); return; }
+    q.since = 0;
+    q.pending = false;
+    if (needsAnswer(t)) streamAnswer(t);
+  }
+  function afterTurn(t) {
+    const q = sh.turns[t.id];
+    if (q?.pending) { q.pending = false; queueTurn(t); }
+  }
+  function cancelTurn(t) {
+    const q = sh.turns[t.id];
+    if (!q) return;
+    clearTimeout(q.timer);
+    Object.assign(q, { timer: 0, pending: false, since: 0 });
+  }
+  function stopAnswer(t) {
+    if (isGuest(t)) { guestLinkFor(t)?.link.send({ t: 'stop' }); return; }
+    cancelTurn(t);
+    runtime.ctrl[t.id]?.abort();
+  }
+
+  /* ---------- Сообщения людей ---------- */
+  const guestLinkFor = t => (sh.guest && sh.guest.tid === t.id && sh.guest.status === 'online' ? sh.guest : null);
+  function groupPush(t, m) {
+    pushMsg(t, m);
+    save();
+    renderSidebar();
+    syncChatComposer();
+    queueTurn(t);
+  }
+  function say(t, text) {
+    text = String(text || '').trim().slice(0, 2000);
+    if (!text) return false;
+    typingOff();
+    if (isGuest(t)) {
+      const g = guestLinkFor(t);
+      const m = { id: GS.rid(12), role: 'user', content: text, author: { id: t.shared.me, name: t.shared.name } };
+      if (!g || !g.link.send({ t: 'say', id: m.id, text })) { toast('Нет связи с создателем чата'); return false; }
+      pushMsg(t, m);
+      save();
+      renderSidebar();
+      return true;
+    }
+    groupPush(t, { role: 'user', content: text, author: { id: HOST_PID, name: hostName() } });
+    return true;
+  }
+  function rollFor(t, die) {
+    if (!DICE.includes(die)) return;
+    if (isGuest(t)) {
+      const g = guestLinkFor(t);
+      if (!g || !g.link.send({ t: 'roll', die })) toast('Нет связи с создателем чата');
+      return;
+    }
+    groupPush(t, { role: 'user', kind: 'roll', die, value: rollDie(die), author: { id: HOST_PID, name: hostName() } });
+  }
+
+  /* ---------- Создатель: рассылка гостям ---------- */
+  const onlineLinks = t => [...sh.links].filter(l => l.tid === t.id && l.pid);
+  function sendAll(t, obj, except) {
+    for (const l of onlineLinks(t)) if (l.pid !== except) l.conn.send(obj);
+  }
+  function sendMeta(t) { if (isHosted(t)) sendAll(t, { t: 'meta', title: t.title, model: t.model }); }
+  function roster(t) {
+    if (!t?.shared) return [];
+    if (isGuest(t)) return Object.entries(t.shared.people || {}).map(([id, p]) => ({ id, name: p.name, c: p.c, online: !!p.online }));
+    const on = new Set(onlineLinks(t).map(l => l.pid));
+    return [{ id: HOST_PID, name: hostName(), c: HOST_TINT, online: true }]
+      .concat(Object.entries(t.shared.people || {}).map(([id, p]) => ({ id, name: p.name, c: p.c, online: on.has(id) })));
+  }
+  function sendPeople(t) {
+    if (isHosted(t)) sendAll(t, { t: 'people', list: roster(t) });
+    renderShareUI();
+  }
+  // Что видит гость: без служебных полей; карточка плана — текстом
+  function publicMsg(t, m) {
+    const o = { id: m.id, role: m.role };
+    if (m.role === 'event') return { ...o, text: m.text };
+    if (m.role === 'user') {
+      o.author = { id: authorId(m), name: authorName(t, m) };
+      if (m.kind === 'roll') return { ...o, kind: 'roll', die: m.die, value: m.value };
+      return { ...o, content: String(m.content || '').slice(0, 4000) };
+    }
+    if (m.kind === 'plan') {
+      const task = m.task || t.task;
+      return task?.plan ? { ...o, kind: null, content: planAsText(task), status: 'done' } : null;
+    }
+    return {
+      ...o,
+      kind: m.kind === 'result' ? 'result' : null,
+      content: String(m.content || '').slice(0, 16000),
+      reasoning: m.reasoning ? m.reasoning.slice(-4000) : '',
+      status: m.status, error: m.error || '', thinkMs: m.thinkMs || 0,
+      suggestions: m.suggestions || [],
+    };
+  }
+  const shareTimers = new Map();
+  function shareMsg(t, m, immediate) {
+    if (!isHosted(t) || !onlineLinks(t).length) return;
+    const send = () => {
+      clearTimeout(shareTimers.get(m.id));
+      shareTimers.delete(m.id);
+      if (!t.messages.includes(m)) return;
+      const o = publicMsg(t, m);
+      if (o) sendAll(t, { t: 'msg', m: o });
+    };
+    if (immediate || m.status !== 'streaming') { send(); return; }
+    if (!shareTimers.has(m.id)) shareTimers.set(m.id, setTimeout(send, 120)); // поток — не чаще ~8 раз в секунду
+  }
+  function hostEvent(t, text, reply) {
+    pushMsg(t, reply ? { role: 'event', text, reply: true } : { role: 'event', text });
+    save();
+    if (reply) queueTurn(t);
+  }
+
+  /* ---------- «Пишет…» ---------- */
+  function setTyping(t, pid, on, name) {
+    const map = sh.typing[t.id] || (sh.typing[t.id] = {});
+    const had = !!map[pid];
+    if (on) map[pid] = { name: name || personName(t, pid), until: Date.now() + 5000 };
+    else delete map[pid];
+    if (isHosted(t) && (on || had)) sendAll(t, { t: 'typing', pid, name: personName(t, pid), on: !!on }, pid);
+    if (had !== !!on && runtime.activeId === t.id) renderTyping(true);
+  }
+  function renderTyping(scroll) {
+    const t = activeThread();
+    const old = threadEl.querySelector('.typing-row');
+    const me = t && myPid(t);
+    const list = t ? Object.entries(sh.typing[t.id] || {}).filter(([pid, v]) => pid !== me && v.until > Date.now()) : [];
+    if (!list.length) { old?.remove(); return; }
+    const names = list.map(([pid, v]) => personName(t, pid, v.name));
+    const label = names.length === 1 ? `${names[0]} пишет`
+      : names.length === 2 ? `${names[0]} и ${names[1]} пишут`
+      : `${names.length} ${plural(names.length, 'человек', 'человека', 'человек')} пишут`;
+    const tn = tint(t, list[0][0]);
+    if (old) {
+      old.querySelector('.typing-name').textContent = label;
+      old.style.setProperty('--tint', tn.bg);
+      old.style.setProperty('--tint-fg', tn.fg);
+      return;
+    }
+    const near = isNearBottom();
+    threadEl.insertAdjacentHTML('beforeend', `<div class="typing-row" style="--tint:${tn.bg};--tint-fg:${tn.fg}">` +
+      `<span class="typing-bubble">${DOTS}</span><span class="typing-name">${esc(label)}</span></div>`);
+    if (scroll && near) scrollToBottom(true);
+  }
+  setInterval(() => {
+    const now = Date.now();
+    for (const [tid, map] of Object.entries(sh.typing)) {
+      let changed = false;
+      for (const [pid, v] of Object.entries(map)) if (v.until <= now) { delete map[pid]; changed = true; }
+      if (changed && tid === runtime.activeId) renderTyping(true);
+    }
+  }, 1000);
+
+  // мой набор текста: «пишу» раз в 1,5 с, через 3 с тишины — «перестал»
+  let typingOn = false, typingSent = 0, typingTimer = 0;
+  function sendTyping(t, on) {
+    if (isGuest(t)) guestLinkFor(t)?.link.send({ t: 'typing', on });
+    else if (isHosted(t)) setTyping(t, HOST_PID, on);
+  }
+  function noteTyping() {
+    const t = activeThread();
+    if (!t || !(isHosted(t) || isGuest(t))) return;
+    clearTimeout(typingTimer);
+    if (!chatInput.value.trim()) { typingOff(); return; }
+    if (!typingOn || Date.now() - typingSent > 1500) { typingOn = true; typingSent = Date.now(); sendTyping(t, true); }
+    typingTimer = setTimeout(typingOff, 3000);
+  }
+  function typingOff() {
+    clearTimeout(typingTimer);
+    if (!typingOn) return;
+    typingOn = false;
+    const t = activeThread();
+    if (t) sendTyping(t, false);
+  }
+
+  /* ---------- Создатель: приём гостей ---------- */
+  function startHost() {
+    if (sh.host || !GS?.available) return;
+    sh.host = GS.createHost({
+      onState: s => {
+        const prev = sh.hostState;
+        sh.hostState = s;
+        if (s === 'busy' && prev !== 'busy') toast('Общие чаты сейчас обслуживает другая вкладка с прототипом');
+        renderShareUI();
+      },
+      onConnection: conn => {
+        const link = { conn, tid: null, pid: null, last: 0, typingAt: 0, quiet: false };
+        sh.links.add(link);
+        conn.on('data', d => { try { hostReceive(link, d); } catch (err) { console.warn('share', err); } });
+        conn.on('close', () => hostDrop(link));
+      },
+    });
+  }
+  const sharedById = id => Object.values(state.threads).find(t => isHosted(t) && t.shared.id === id);
+  function bye(link, frame) {
+    link.quiet = true;
+    link.conn.send(frame);
+    setTimeout(() => link.conn.close(), 300);
+  }
+
+  // Гостю не доверяем: проверяем каждое поле и частоту сообщений
+  function hostReceive(link, d) {
+    if (!d || typeof d !== 'object' || typeof d.t !== 'string') return;
+    if (!link.pid) {
+      if (d.t !== 'peek' && d.t !== 'hello') return;
+      const t = GS.validId(d.share) ? sharedById(d.share) : null;
+      if (!t) { bye(link, { t: 'closed' }); return; }
+      if (d.t === 'peek') link.conn.send({ t: 'preview', title: t.title, hostName: hostName(), preset: t.preset || null });
+      else hostWelcome(link, t, d);
+      return;
+    }
+    const t = state.threads[link.tid];
+    if (!isHosted(t)) return;
+    const now = Date.now();
+    switch (d.t) {
+      case 'say': {
+        const text = String(d.text || '').trim().slice(0, 2000);
+        const id = typeof d.id === 'string' && /^[a-z0-9]{6,24}$/.test(d.id) ? d.id : null;
+        if (!text || !id || t.messages.some(m => m.id === id)) return;
+        if (now - link.last < 700) { link.conn.send({ t: 'reject', id, reason: 'Слишком часто — подождите секунду' }); return; }
+        link.last = now;
+        setTyping(t, link.pid, false);
+        groupPush(t, { id, role: 'user', content: text, author: { id: link.pid, name: personName(t, link.pid) } });
+        break;
+      }
+      case 'roll':
+        if (t.preset !== 'rpg' || !DICE.includes(d.die) || now - link.last < 700) return;
+        link.last = now;
+        groupPush(t, { role: 'user', kind: 'roll', die: d.die, value: rollDie(d.die), author: { id: link.pid, name: personName(t, link.pid) } });
+        break;
+      case 'typing':
+        if (d.on && now - link.typingAt < 300) return;
+        link.typingAt = now;
+        setTyping(t, link.pid, !!d.on);
+        break;
+      case 'stop':
+        if (isBusy(t)) stopAnswer(t);
+        break;
+    }
+  }
+
+  function hostWelcome(link, t, d) {
+    const name = cleanName(d.name);
+    const token = typeof d.token === 'string' && /^[a-z0-9]{12,40}$/.test(d.token) ? d.token : null;
+    if (!name || !token) { bye(link, { t: 'closed' }); return; }
+    const people = t.shared.people || (t.shared.people = {});
+    let pid = Object.keys(people).find(k => people[k].token === token);
+    if (onlineLinks(t).filter(l => l.pid !== pid).length >= MAX_GUESTS) { bye(link, { t: 'full' }); return; }
+    if (!pid) {
+      pid = 'g' + GS.rid(6);
+      people[pid] = { name, token, c: GUEST_TINTS[Object.keys(people).length % GUEST_TINTS.length], seen: 0 };
+    }
+    // тот же гость из другой вкладки — прежнее соединение закрываем
+    for (const l of onlineLinks(t)) if (l.pid === pid) bye(l, { t: 'replaced' });
+    const p = people[pid];
+    p.name = name;
+    link.tid = t.id;
+    link.pid = pid;
+    const key = `${t.id}:${pid}`;
+    const returning = !!sh.leaveTimers[key] || (p.seen && Date.now() - p.seen < 60000);
+    clearTimeout(sh.leaveTimers[key]);
+    delete sh.leaveTimers[key];
+
+    link.conn.send({ t: 'welcome', you: pid, title: t.title, model: t.model, preset: t.preset || null });
+    for (const m of t.messages.slice(-SNAPSHOT)) {
+      const o = publicMsg(t, m);
+      if (o) link.conn.send({ t: 'msg', m: o });
+    }
+    link.conn.send({ t: 'synced' });
+    sendPeople(t);
+    for (const [tp, v] of Object.entries(sh.typing[t.id] || {})) {
+      if (tp !== pid) link.conn.send({ t: 'typing', pid: tp, name: personName(t, tp, v.name), on: true });
+    }
+    // в игре ведущий сразу поприветствует нового игрока
+    if (!returning) hostEvent(t, `${name} входит в чат`, t.preset === 'rpg');
+    save();
+  }
+
+  function hostDrop(link) {
+    sh.links.delete(link);
+    const t = state.threads[link.tid];
+    if (!t || !link.pid) return;
+    const p = t.shared?.people?.[link.pid];
+    if (p) p.seen = Date.now();
+    const stillHere = onlineLinks(t).some(l => l.pid === link.pid);
+    if (!stillHere) setTyping(t, link.pid, false);
+    // «выходит из чата» — только если за 30 секунд не вернулся (перезагрузка, смена сети)
+    if (!link.quiet && !stillHere && isHosted(t) && p) {
+      const key = `${t.id}:${link.pid}`;
+      clearTimeout(sh.leaveTimers[key]);
+      sh.leaveTimers[key] = setTimeout(() => {
+        delete sh.leaveTimers[key];
+        if (isHosted(t) && !onlineLinks(t).some(l => l.pid === link.pid)) hostEvent(t, `${p.name} выходит из чата`);
+      }, 30000);
+    }
+    sendPeople(t);
+    save();
+  }
+
+  function activateShare(t) {
+    if (!GS?.available) { toast('Общий чат в этом браузере недоступен'); return false; }
+    if (t.mode === 'task') {
+      if (isBusy(t)) { toast('Дождитесь, пока задача выполнится'); return false; }
+      archiveTask(t);
+      t.mode = 'ask';
+      t.editing = false;
+    }
+    if (!t.shared) t.shared = { role: 'host', people: {} };
+    if (!t.shared.active) { t.shared.active = true; t.shared.id = GS.rid(10); }
+    startHost();
+    save();
+    syncChatComposer();
+    renderThread();
+    renderSidebar();
+    return true;
+  }
+  function stopSharing(t) {
+    if (!isHosted(t)) return;
+    for (const l of onlineLinks(t)) bye(l, { t: 'closed' });
+    t.shared.active = false;
+    for (const k of Object.keys(sh.leaveTimers)) {
+      if (k.startsWith(t.id + ':')) { clearTimeout(sh.leaveTimers[k]); delete sh.leaveTimers[k]; }
+    }
+    delete sh.typing[t.id];
+    save();
+    renderTyping();
+    renderShareUI();
+    toast('Доступ закрыт — по старой ссылке больше не войти');
+  }
+
+  /* ---------- Гость ---------- */
+  const ROLES = new Set(['user', 'assistant', 'event']);
+  const STATUSES = new Set(['streaming', 'done', 'stopped', 'error']);
+  const str = (v, n) => (typeof v === 'string' ? v.slice(0, n) : '');
+  // Что пришло от создателя — только по белому списку полей
+  function cleanMsg(o) {
+    if (!o || typeof o !== 'object' || !ROLES.has(o.role) || typeof o.id !== 'string' || !/^[a-z0-9]{4,40}$/.test(o.id)) return null;
+    const m = { id: o.id, role: o.role };
+    if (o.role === 'event') { m.text = str(o.text, 120); return m.text ? m : null; }
+    if (o.role === 'user') {
+      m.author = { id: validPid(o.author?.id) || 'gxxxxxx', name: cleanName(o.author?.name) || 'Гость' };
+      if (o.kind === 'roll') {
+        const die = DICE.includes(o.die) ? o.die : 0;
+        if (!die || !Number.isInteger(o.value) || o.value < 1 || o.value > die) return null;
+        Object.assign(m, { kind: 'roll', die, value: o.value });
+      } else {
+        m.content = str(o.content, 4000);
+      }
+      return m;
+    }
+    m.kind = o.kind === 'result' ? 'result' : null;
+    m.content = str(o.content, 16000);
+    m.reasoning = str(o.reasoning, 4000);
+    m.status = STATUSES.has(o.status) ? o.status : 'done';
+    if (m.status === 'error') m.error = str(o.error, 300) || 'Не удалось получить ответ';
+    if (Number.isFinite(o.thinkMs)) m.thinkMs = Math.max(0, Math.min(o.thinkMs, 600000));
+    if (Array.isArray(o.suggestions)) m.suggestions = o.suggestions.filter(s => typeof s === 'string').slice(0, 2).map(s => s.slice(0, 60));
+    return m;
+  }
+
+  const guestThreadFor = (host, share) => Object.values(state.threads).find(t => isGuest(t) && t.shared.host === host && t.shared.id === share);
+  const FINAL = ['closed', 'full', 'replaced'];
+
+  function guestStart({ host, share, tid = null, name = '', token, phase }) {
+    guestStop();
+    const g = { host, share, tid, name, token, phase, status: 'connecting', link: null, retry: 0, syncing: false, buffer: [] };
+    sh.guest = g;
+    g.link = GS.join(host, {
+      onOpen: () => {
+        if (sh.guest !== g) return;
+        g.link.send(g.name ? { t: 'hello', share, name: g.name, token: g.token } : { t: 'peek', share });
+      },
+      onData: d => {
+        if (sh.guest !== g) return;
+        try { guestReceive(g, d); } catch (err) { console.warn('share', err); }
+      },
+      onClose: () => guestLost(g),
+      onFail: reason => {
+        if (sh.guest !== g) return;
+        if (g.phase === 'join') joinShow('fail', { reason });
+        else guestLost(g);
+      },
+    });
+    return g;
+  }
+  function guestStop() {
+    const g = sh.guest;
+    if (!g) return;
+    clearTimeout(g.retry);
+    g.link?.stop();
+    sh.guest = null;
+  }
+  // связь пропала — переписка остаётся, переподключаемся каждые 5 секунд
+  function guestLost(g) {
+    if (sh.guest !== g || FINAL.includes(g.status)) return;
+    if (g.phase === 'join') { joinShow('fail', { reason: 'offline' }); return; }
+    g.status = 'offline';
+    if (g.tid) delete sh.typing[g.tid];
+    clearTimeout(g.retry);
+    g.retry = setTimeout(() => { if (sh.guest === g) g.link.retry(); }, 5000);
+    refreshGuest(g);
+  }
+  function guestEnsure(t) {
+    const g = sh.guest;
+    if (g && g.tid === t.id && !FINAL.includes(g.status)) return;
+    if (g?.phase === 'join') return;
+    if (!t.shared.name || !t.shared.token || !GS?.available) return;
+    guestStart({ host: t.shared.host, share: t.shared.id, tid: t.id, name: t.shared.name, token: t.shared.token, phase: 'live' });
+  }
+  function refreshGuest(g) {
+    if (!g.tid || runtime.activeId !== g.tid) return;
+    syncChatComposer();
+    renderShareUI();
+    renderTyping();
+  }
+
+  function guestUpsert(t, m) {
+    if (m.role === 'user' && sh.typing[t.id]?.[m.author.id]) setTyping(t, m.author.id, false);
+    const cur = t.messages.find(x => x.id === m.id);
+    if (!cur) {
+      pushMsg(t, m);
+    } else {
+      Object.assign(cur, { error: undefined, suggestions: undefined }, m, { liked: cur.liked, reasoningOpen: cur.reasoningOpen });
+      if (cur.status === 'streaming') { scheduleUpdate(t, cur); save(); return; }
+      updateMsgEl(t, cur);
+    }
+    save();
+    if (runtime.activeId === t.id) syncChatComposer();
+    renderSidebar();
+  }
+
+  function guestReceive(g, d) {
+    if (!d || typeof d !== 'object') return;
+    let t = state.threads[g.tid];
+    switch (d.t) {
+      case 'preview':
+        if (g.phase === 'join' && !g.name) joinShow('name', { hostName: cleanName(d.hostName), title: shortTitle(str(d.title, 80)) });
+        break;
+      case 'welcome': {
+        const me = validPid(d.you);
+        if (!me) return;
+        t = t || guestThreadFor(g.host, g.share) || createThread({
+          mode: 'ask', model: 'fast', title: 'Общий чат', titleLocked: true,
+          shared: { role: 'guest', host: g.host, id: g.share, people: {} },
+        });
+        Object.assign(t.shared, { me, name: g.name, token: g.token });
+        t.title = shortTitle(str(d.title, 80) || t.title);
+        t.model = d.model === 'think' ? 'think' : 'fast';
+        t.preset = d.preset === 'rpg' ? 'rpg' : null;
+        g.tid = t.id;
+        g.syncing = true;
+        g.buffer = [];
+        break;
+      }
+      case 'msg': {
+        const m = cleanMsg(d.m);
+        if (!m || !t) return;
+        if (g.syncing) g.buffer.push(m); else guestUpsert(t, m);
+        break;
+      }
+      case 'synced': {
+        if (!t || !g.syncing) return;
+        const old = new Map(t.messages.map(x => [x.id, x]));
+        t.messages = g.buffer.map(m => {
+          const o = old.get(m.id);
+          if (o) { m.liked = o.liked; m.reasoningOpen = o.reasoningOpen; }
+          return m;
+        });
+        g.syncing = false;
+        g.buffer = [];
+        g.status = 'online';
+        touch(t);
+        save();
+        if (g.phase === 'join') { g.phase = 'live'; finishJoin(t); }
+        else if (runtime.activeId === t.id) renderThread(true);
+        renderSidebar();
+        refreshGuest(g);
+        break;
+      }
+      case 'del': {
+        const m = t?.messages.find(x => x.id === d.id);
+        if (m) { removeMsg(t, m); save(); }
+        break;
+      }
+      case 'typing': {
+        const pid = validPid(d.pid);
+        if (t && pid && pid !== t.shared.me) setTyping(t, pid, !!d.on, cleanName(d.name));
+        break;
+      }
+      case 'people': {
+        if (!t || !Array.isArray(d.list)) return;
+        const names = ppl => Object.entries(ppl || {}).map(([id, p]) => id + p.name).join('|');
+        const before = names(t.shared.people);
+        const people = {};
+        for (const p of d.list.slice(0, 12)) {
+          const id = validPid(p?.id);
+          if (id) people[id] = { name: cleanName(p.name) || 'Гость', c: Number.isInteger(p.c) ? Math.abs(p.c) % TINTS.length : 0, online: !!p.online };
+        }
+        t.shared.people = people;
+        save();
+        if (runtime.activeId === t.id && names(people) !== before) renderThread();
+        refreshGuest(g);
+        break;
+      }
+      case 'meta':
+        if (!t) return;
+        if (typeof d.title === 'string' && d.title.trim()) t.title = shortTitle(d.title.slice(0, 80));
+        t.model = d.model === 'think' ? 'think' : 'fast';
+        save();
+        renderSidebar();
+        refreshGuest(g);
+        break;
+      case 'reject': {
+        const m = t?.messages.find(x => x.id === d.id && x.role === 'user');
+        if (m) removeMsg(t, m);
+        toast(str(d.reason, 80) || 'Сообщение не отправилось');
+        break;
+      }
+      case 'closed':
+      case 'full':
+      case 'replaced':
+        g.status = d.t;
+        clearTimeout(g.retry);
+        g.link.stop();
+        if (g.phase === 'join') joinShow('fail', { reason: d.t });
+        refreshGuest(g);
+        break;
+    }
+  }
+
+  /* ---------- Вход гостя по ссылке ---------- */
+  const joinEl = $('#join');
+  const joinName = $('#joinName');
+  const JOIN_FAIL = {
+    offline: ['Создатель чата не в сети', 'Ссылка заработает, когда создатель снова откроет прототип'],
+    timeout: ['Не получилось подключиться', 'Возможно, мешает VPN или строгая сеть. Попробуйте ещё раз или другую сеть'],
+    network: ['Нет связи', 'Проверьте интернет и попробуйте ещё раз'],
+    browser: ['Браузер не подходит', 'Откройте ссылку в свежем Chrome, Safari, Firefox или Edge'],
+    closed: ['Ссылка не работает', 'Создатель закрыл доступ к чату, или ссылка скопирована не целиком'],
+    full: ['Чат заполнен', 'В чате уже максимум участников'],
+    replaced: ['Чат открыт в другой вкладке', 'Продолжайте там или закройте её и обновите страницу'],
+  };
+  function joinShow(kind, info = {}) {
+    $('#joinField').hidden = kind !== 'name';
+    $('#joinActions').hidden = kind !== 'fail';
+    $('#joinError').textContent = '';
+    const title = $('#joinTitle');
+    const text = $('#joinText');
+    if (kind === 'connecting') {
+      title.textContent = info.title || 'Подключаюсь к чату';
+      text.innerHTML = `${SPIN16}${esc(info.text || 'Это займёт пару секунд')}`;
+    } else if (kind === 'name') {
+      title.textContent = info.hostName ? `${info.hostName} приглашает в чат` : 'Вас пригласили в чат';
+      text.textContent = `«${info.title || 'Общий чат'}». Как вас представить?`;
+      joinName.value = sh.name;
+      setTimeout(() => joinName.focus(), 50);
+    } else {
+      const [a, b] = JOIN_FAIL[info.reason] || JOIN_FAIL.network;
+      title.textContent = a;
+      text.textContent = b;
+      $('#joinRetry').hidden = FINAL.includes(info.reason) || info.reason === 'browser';
+    }
+  }
+  function finishJoin(t) {
+    document.documentElement.classList.remove('is-locked');
+    joinEl.classList.add('is-leaving');
+    setTimeout(() => { joinEl.hidden = true; joinEl.classList.remove('is-leaving'); }, 400);
+    openThread(t.id);
+  }
+  $('#joinForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const g = sh.guest;
+    const name = cleanName(joinName.value);
+    if (!g) return;
+    if (!name) {
+      const f = $('#joinForm');
+      f.classList.remove('shake'); void f.offsetWidth; f.classList.add('shake');
+      joinName.focus();
+      return;
+    }
+    setMyName(name);
+    g.name = name;
+    joinShow('connecting', { title: 'Вхожу в чат', text: 'Секунду…' });
+    if (!g.link.send({ t: 'hello', share: g.share, name, token: g.token })) joinShow('fail', { reason: 'network' });
+  });
+  $('#joinRetry').addEventListener('click', () => {
+    const g = sh.guest;
+    if (!g) return;
+    g.status = 'connecting';
+    joinShow('connecting');
+    g.link.retry();
+  });
+  // без приглашения — обычный вход по паролю (страница перезагрузится без #join)
+  $('#joinPass').addEventListener('click', () => location.replace(location.pathname + location.search));
+
+  /* ---------- Приглашение, участники, плашка ---------- */
+  const inviteBtn = $('#inviteBtn');
+  const invitePop = $('#invitePop');
+  const ipName = $('#ipName');
+  const ipLink = $('#ipLink');
+  const ipCopy = $('#ipCopy');
+  const ipStop = $('#ipStop');
+  const linkFor = t => (isGuest(t) ? GS.makeLink(t.shared.host, t.shared.id) : isHosted(t) ? GS.makeLink(GS.hostId(), t.shared.id) : '');
+  const HOST_NOTE = {
+    connecting: 'Подключаюсь к сети…',
+    reconnecting: 'Связь пропала — переподключаюсь…',
+    busy: 'Общие чаты сейчас обслуживает другая вкладка с прототипом',
+    online: 'Чат работает, пока эта вкладка открыта',
+  };
+  const avatarHTML = (p, title) => {
+    const tn = tintByIndex(p.c);
+    return `<span class="av" style="--av:${tn.av};--av-fg:${tn.fg}"${title ? ` title="${esc(title)}"` : ''}>${esc(initial(p.name))}</span>`;
+  };
+
+  function openInvite() {
+    const t = activeThread();
+    if (!t) return;
+    closeModelMenu();
+    closePlusMenu();
+    closeDice();
+    invitePop.hidden = false;
+    inviteBtn.setAttribute('aria-expanded', 'true');
+    renderInvite();
+    if (!isGuest(t) && !sh.name) setTimeout(() => ipName.focus(), 40);
+  }
+  function closeInvite() {
+    if (invitePop.hidden) return;
+    invitePop.hidden = true;
+    inviteBtn.setAttribute('aria-expanded', 'false');
+  }
+  function renderInvite() {
+    const t = activeThread();
+    if (!t || invitePop.hidden) return;
+    const guest = isGuest(t);
+    const link = GS ? linkFor(t) : '';
+    $('#ipNameRow').hidden = guest;
+    if (document.activeElement !== ipName) ipName.value = sh.name;
+    $('#ipText').textContent = guest
+      ? 'Позовите ещё кого-нибудь: по этой ссылке можно войти в этот чат.'
+      : t.preset === 'rpg'
+        ? 'Друзья откроют ссылку и сыграют вместе с вами. ГигаЧат ведёт игру и отвечает всем.'
+        : 'Друг откроет ссылку и сможет писать здесь вместе с вами. ГигаЧат ответит всем.';
+    ipLink.value = link;
+    $('#ipLinkRow').classList.toggle('has-link', !!link);
+    ipCopy.textContent = link ? 'Скопировать' : 'Создать ссылку';
+    ipCopy.disabled = !guest && !cleanName(ipName.value);
+    $('#ipNote').textContent = guest
+      ? 'Чат работает, пока у создателя открыта вкладка'
+      : isHosted(t) ? HOST_NOTE[sh.hostState] || HOST_NOTE.connecting : 'Ссылка работает, пока эта вкладка открыта';
+    ipStop.hidden = !isHosted(t);
+    const me = myPid(t);
+    $('#ipPeople').innerHTML = roster(t).map(p =>
+      `<div class="ip-person">${avatarHTML(p)}<span class="ip-pname">${esc(p.name)}${p.id === me ? ' <i>— вы</i>' : ''}</span>` +
+      `<span class="ip-state${p.online ? ' is-on' : ''}">${p.online ? 'в сети' : 'не в сети'}</span></div>`).join('');
+  }
+  function renderPeople(t) {
+    const me = t && myPid(t);
+    const live = t && (!isGuest(t) || guestLinkFor(t));
+    const list = live ? roster(t).filter(p => p.online && p.id !== me) : [];
+    $('#people').innerHTML = list.slice(0, 4).map(p => avatarHTML(p, `${p.name} — в сети`)).join('') +
+      (list.length > 4 ? `<span class="av av-more">+${list.length - 4}</span>` : '');
+  }
+  function renderShareNote(t) {
+    let text = '';
+    if (isGuest(t)) {
+      const st = sh.guest?.tid === t.id ? sh.guest.status : 'connecting';
+      text = {
+        connecting: 'Подключаюсь к создателю чата…',
+        offline: 'Создатель чата не в сети — переписка сохранена. Переподключаюсь…',
+        closed: 'Создатель закрыл доступ к этому чату',
+        full: 'В чате уже максимум участников',
+        replaced: 'Этот чат открыт в другой вкладке',
+      }[st] || '';
+    } else if (isHosted(t) && sh.hostState === 'busy') {
+      text = 'Этот общий чат обслуживает другая вкладка с прототипом — пишите в ней';
+    }
+    const el = $('#shareNote');
+    el.textContent = text;
+    el.hidden = !text;
+  }
+  function renderShareUI() {
+    const t = activeThread();
+    renderPeople(t);
+    renderShareNote(t);
+    renderInvite();
+  }
+
+  inviteBtn.addEventListener('click', () => (invitePop.hidden ? openInvite() : closeInvite()));
+  ipCopy.addEventListener('click', () => {
+    const t = activeThread();
+    if (!t) return;
+    if (!isGuest(t)) {
+      const name = cleanName(ipName.value);
+      if (!name) { ipName.focus(); return; }
+      if (name !== sh.name) setMyName(name);
+      if (!isHosted(t) && !activateShare(t)) return;
+      sendPeople(t);
+    }
+    renderInvite();
+    copyText(linkFor(t), 'Ссылка скопирована — отправьте её другу');
+  });
+  ipName.addEventListener('input', () => {
+    const name = cleanName(ipName.value);
+    ipCopy.disabled = !name;
+    if (!name) return;
+    setMyName(name);
+    const t = activeThread();
+    if (isHosted(t)) sendPeople(t);
+  });
+  ipName.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); ipCopy.click(); } });
+  ipLink.addEventListener('focus', () => ipLink.select());
+  ipStop.addEventListener('click', () => {
+    const t = activeThread();
+    if (t) stopSharing(t);
+    renderInvite();
+  });
+  document.addEventListener('click', e => {
+    if (!invitePop.hidden && !invitePop.contains(e.target) && !e.target.closest('#inviteBtn')) closeInvite();
+  });
+
+  /* ---------- Кубики ---------- */
+  const diceMenu = $('#diceMenu');
+  let diceOpen = false;
+  function openDice() {
+    closeModelMenu();
+    closePlusMenu();
+    closeInvite();
+    const r = chatDice.getBoundingClientRect();
+    diceMenu.style.left = `${r.left}px`;
+    diceMenu.style.top = `${r.top - 8 - diceMenu.offsetHeight}px`;
+    diceMenu.classList.add('is-open');
+    chatDice.setAttribute('aria-expanded', 'true');
+    diceOpen = true;
+  }
+  function closeDice() {
+    if (!diceOpen) return;
+    diceOpen = false;
+    diceMenu.classList.remove('is-open');
+    chatDice.setAttribute('aria-expanded', 'false');
+  }
+  chatDice.addEventListener('click', () => (diceOpen ? closeDice() : openDice()));
+  diceMenu.addEventListener('click', e => {
+    const b = e.target.closest('.dice-opt');
+    if (!b) return;
+    closeDice();
+    const t = activeThread();
+    if (t) rollFor(t, Number(b.dataset.die));
+  });
+  diceMenu.addEventListener('keydown', e => {
+    const items = $$('.dice-opt', diceMenu);
+    const i = items.indexOf(document.activeElement);
+    if (e.key === 'ArrowRight') { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+  });
+  document.addEventListener('click', e => {
+    if (diceOpen && !diceMenu.contains(e.target) && !e.target.closest('#chatDice')) closeDice();
+  });
+  window.addEventListener('resize', closeDice);
+
+  /* ---------- Пресет «Ролевая игра» ---------- */
+  function startRpg() {
+    const t = createThread({ mode: 'ask', model: 'fast', title: 'Ролевая игра', titleLocked: true, preset: 'rpg' });
+    openThread(t.id);
+    streamAnswer(t); // ведущий сам открывает сцену
+    if (!JOIN) setTimeout(openInvite, 450);
+  }
+  $('#rpgStart').addEventListener('click', startRpg);
+
+  /* =====================================================================
      Старт
      ===================================================================== */
+  if (JOIN) {
+    // вход по приглашению: страница откроется, когда создатель примет подключение
+    joinEl.hidden = false;
+    if (!GS?.available) {
+      joinShow('fail', { reason: 'browser' });
+    } else {
+      joinShow('connecting');
+      const existing = guestThreadFor(JOIN.host, JOIN.share);
+      guestStart({
+        host: JOIN.host, share: JOIN.share, tid: existing?.id || null,
+        name: existing?.shared.name || '', token: existing?.shared.token || GS.rid(16), phase: 'join',
+      });
+    }
+  } else if (Object.values(state.threads).some(isHosted)) {
+    startHost(); // ссылки на общие чаты снова работают после перезагрузки
+  }
   renderSidebar();
   if (location.protocol === 'file:' && !isDirect()) {
     setTimeout(() => toast('Чат работает через сервер: node server.js → http://localhost:3000'), 800);

@@ -1157,3 +1157,175 @@ html.is-locked .app, html.is-locked .toast { visibility: hidden; }
 .gate-error { min-height: 18px; margin-top: 8px; font-size: 13px; line-height: 18px; color: #c2412d; }
 .gate-card.shake { animation: shake .4s ease; }
 @keyframes shake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+
+/* ---------------- Общий чат ---------------- */
+.share-bar {
+  position: absolute; top: 18px; right: 140px; z-index: 3;
+  display: flex; align-items: center; gap: 10px;
+}
+.invite-btn {
+  height: 40px; padding: 0 16px 0 14px;
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #f5f5f7;
+  border-radius: 100px;
+  font-size: 13px; line-height: 18px; font-weight: 500;
+  transition: background-color .15s;
+}
+.invite-btn:hover, .invite-btn[aria-expanded="true"] { background: #ececef; }
+
+.people { display: flex; }
+.people:empty { display: none; }
+.av {
+  width: 28px; height: 28px; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: var(--av, #ececef); color: var(--av-fg, rgba(8, 8, 8, 0.7));
+  font-size: 12px; line-height: 1; font-weight: 600;
+  box-shadow: 0 0 0 2px #fff;
+  user-select: none;
+}
+.people .av { animation: av-in .35s var(--ease-out) both; }
+.people .av + .av { margin-left: -6px; }
+.av-sm { width: 18px; height: 18px; font-size: 10px; box-shadow: none; }
+.av-more { background: #ececef; color: var(--text-secondary); }
+@keyframes av-in { from { opacity: 0; transform: scale(.6); } }
+
+/* Поповер «Пригласить в чат» */
+.invite-pop {
+  position: absolute; top: 66px; right: 24px; z-index: 6;
+  width: 360px; padding: 20px;
+  display: flex; flex-direction: column; gap: 14px;
+  background: #fff;
+  border: 1px solid var(--chip-border);
+  border-radius: 24px;
+  box-shadow: 0 24px 48px -8px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+  animation: pop-in .2s var(--ease-out) both;
+}
+.invite-pop[hidden] { display: none; }
+.ip-title { font-size: 16px; line-height: 22px; font-weight: 600; }
+.ip-text { margin-top: -8px; font-size: 13px; line-height: 18px; color: var(--text-secondary); }
+.ip-name { display: flex; flex-direction: column; gap: 6px; font-size: 12px; line-height: 14px; color: var(--text-secondary); }
+.ip-name[hidden] { display: none; }
+.ip-name input, .ip-link input {
+  min-width: 0; height: 40px; padding: 0 14px;
+  border: 1px solid #ececef; border-radius: 12px;
+  background: #fff; outline: 0;
+  font: inherit; font-size: 14px; color: var(--text-primary);
+  transition: border-color .15s, box-shadow .15s;
+}
+.ip-name input:focus, .ip-link input:focus { border-color: #c9d2e6; box-shadow: 0 0 0 3px rgba(18, 38, 84, 0.06); }
+.ip-name input::placeholder { color: var(--text-tertiary); }
+.ip-link { display: flex; gap: 8px; }
+.ip-link input { flex: 1; background: #f7f7f8; color: var(--text-secondary); font-size: 13px; text-overflow: ellipsis; }
+.ip-link:not(.has-link) input { display: none; }
+.ip-link:not(.has-link) .btn { flex: 1; }
+.ip-link .btn { flex: none; padding: 0 16px; }
+.btn:disabled { opacity: .4; cursor: default; transform: none; }
+.ip-people { display: flex; flex-direction: column; }
+.ip-people:empty { display: none; }
+.ip-person { display: flex; align-items: center; gap: 10px; height: 36px; font-size: 14px; line-height: 20px; }
+.ip-person .av { box-shadow: none; }
+.ip-pname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ip-pname i { font-style: normal; color: var(--text-tertiary); }
+.ip-state { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; color: var(--text-tertiary); }
+.ip-state::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #d4d4d8; }
+.ip-state.is-on { color: #1f8a5b; }
+.ip-state.is-on::before { background: #2fc282; }
+.ip-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 12px; border-top: 1px solid #f2f2f4; }
+.ip-note { font-size: 12px; line-height: 16px; color: var(--text-tertiary); }
+.ip-close { flex: none; font-size: 13px; line-height: 16px; color: #c2412d; }
+.ip-close[hidden] { display: none; }
+
+/* Сообщения в общем чате: все люди справа, у чужих — имя и свой оттенок */
+.msg-user.is-cont { margin-top: 8px; }
+.msg-author {
+  display: flex; align-items: center; gap: 6px;
+  margin: 0 16px 6px 0;
+  font-size: 12px; line-height: 16px; font-weight: 500;
+  color: var(--tint-fg, var(--text-secondary));
+}
+.msg-author .av { --av: var(--tint-av); --av-fg: var(--tint-fg); }
+.msg-user.is-other .bubble { background: var(--tint); }
+.msg-event { margin: 24px 0 16px; text-align: center; font-size: 13px; line-height: 18px; color: var(--text-tertiary); }
+.thread > .msg-event:first-child { margin-top: 0; }
+.roll-pill {
+  margin-right: 16px;
+  height: 44px; padding: 0 18px 0 12px;
+  display: inline-flex; align-items: center; gap: 8px;
+  border-radius: 100px;
+  background: #f8f8f8;
+  font-size: 15px; line-height: 20px;
+}
+.msg-roll { margin-bottom: 16px; }
+.msg-roll.is-other .roll-pill { background: var(--tint); }
+.roll-die { color: var(--text-secondary); }
+.roll-arrow { color: var(--text-tertiary); }
+.roll-pill b { min-width: 14px; font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: center; }
+.msg-roll.enter .roll-pill img { animation: roll-spin .6s var(--ease-out) both; }
+.msg-roll.enter .roll-pill b { animation: roll-in .45s .25s var(--ease-out) both; }
+@keyframes roll-spin { from { transform: rotate(-200deg) scale(.6); } }
+@keyframes roll-in { from { opacity: 0; transform: scale(.4); } }
+
+/* «Аня пишет…» — призрачный пузырь справа внизу ленты */
+.typing-row { display: flex; flex-direction: column; align-items: flex-end; margin-top: 16px; animation: msg-in .3s var(--ease-out) both; }
+.typing-bubble {
+  margin-right: 16px;
+  height: 44px; padding: 0 20px;
+  display: inline-flex; align-items: center;
+  border-radius: 32px 32px 4px 32px;
+  background: var(--tint, #f8f8f8); color: var(--tint-fg, var(--text-secondary));
+}
+.typing-name { margin: 6px 16px 0 0; font-size: 12px; line-height: 16px; color: var(--text-secondary); }
+
+/* Плашка над полем: создатель не в сети, доступ закрыт */
+.share-note {
+  max-width: 720px; padding: 8px 16px;
+  border-radius: 100px;
+  background: #fff4e5; color: #8a5a12;
+  font-size: 13px; line-height: 18px;
+  box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.08);
+}
+.share-note[hidden] { display: none; }
+.chat-composer.is-off { opacity: .5; pointer-events: none; }
+
+/* В общем чате нет «Поручить» и «+»; модель выбирает только создатель */
+.view-chat.is-group .chat-toggle,
+.view-chat.is-group #chatPlus,
+.view-chat.is-guest #chatModel { display: none; }
+
+/* Кубики */
+.dice-chip {
+  height: 32px; padding: 0 12px 0 8px;
+  display: inline-flex; align-items: center; gap: 6px;
+  border-radius: 100px;
+  background: #f5f3ff; color: #4a3a8c;
+  font-size: 13px; line-height: 18px; font-weight: 500;
+  transition: background-color .15s;
+}
+.dice-chip:hover, .dice-chip[aria-expanded="true"] { background: #ebe6ff; }
+.dice-chip[hidden] { display: none; }
+.dice-menu {
+  position: fixed; top: 0; left: 0; z-index: 50;
+  display: flex; gap: 2px; padding: 6px;
+  background: #fff;
+  border: 1px solid var(--chip-border);
+  border-radius: 18px;
+  box-shadow: 0 24px 48px -8px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+  opacity: 0; visibility: hidden;
+  transform: translateY(6px) scale(.98);
+  transform-origin: bottom left;
+  transition: opacity .16s ease, transform .2s var(--ease-out), visibility .16s;
+}
+.dice-menu.is-open { opacity: 1; visibility: visible; transform: none; }
+.dice-opt { width: 48px; height: 40px; border-radius: 12px; font-size: 14px; font-weight: 600; color: #4a3a8c; transition: background-color .12s; }
+.dice-opt:hover, .dice-opt:focus-visible { background: #f5f3ff; outline: none; }
+
+/* Общий чат в сайдбаре */
+.chat-row .row-ico { margin-left: 6px; flex: none; }
+
+/* Вход гостя по ссылке */
+.join p { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.gate-field[hidden], .join-actions[hidden] { display: none; }
+.join-actions { display: flex; gap: 8px; }
+.gate-back { margin-top: 12px; font-size: 13px; line-height: 18px; color: var(--text-secondary); }
+.gate-back[hidden] { display: none; }

@@ -26,6 +26,28 @@
     </div>
     <label class="gate-remember"><input type="checkbox" id="gateRemember" checked> Запомнить на этом устройстве</label>
     <div class="gate-error" id="gateError" role="alert"></div>
+    <button class="gate-back link-btn" type="button" id="gateBack" hidden>Вернуться в чат</button>
+  </form>
+</div>
+
+<!-- Вход гостя по ссылке-приглашению в общий чат -->
+<div class="gate join" id="join" hidden>
+  <img class="gate-aurora" src="assets/aurora-ask.svg" width="1132" height="856.632" alt="">
+  <form class="gate-card" id="joinForm" autocomplete="off">
+    <img class="gate-logo" src="assets/logo.svg" width="97" height="40" alt="ГигаЧат">
+    <h1 id="joinTitle">Подключаюсь к чату</h1>
+    <p id="joinText"><img class="spin" src="assets/icon-loader.svg" width="16" height="16" alt="">Это займёт пару секунд</p>
+    <div class="gate-field" id="joinField" hidden>
+      <input type="text" id="joinName" placeholder="Как вас зовут?" maxlength="24" aria-label="Ваше имя" autocomplete="nickname">
+      <button class="gate-go" type="submit" title="Войти в чат" aria-label="Войти в чат">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.2 4.2 20.4 11.3a.8.8 0 0 1 0 1.4L5.2 19.8a.7.7 0 0 1-1-.8L6.3 12 4.2 5a.7.7 0 0 1 1-.8z" fill="#fff"/></svg>
+      </button>
+    </div>
+    <div class="join-actions" id="joinActions" hidden>
+      <button type="button" class="btn btn-primary" id="joinRetry">Попробовать снова</button>
+      <button type="button" class="btn btn-ghost" id="joinPass">Войти по паролю</button>
+    </div>
+    <div class="gate-error" id="joinError" role="alert"></div>
   </form>
 </div>
 
@@ -229,6 +251,7 @@
           <div class="suggestions" data-for="ask">
             <button class="sugg dim" data-fill="Что умеет ГигаЧат?"><img class="pic" src="assets/chip-capability.png" alt="">Что умеет ГигаЧат</button>
             <button class="sugg dim" data-fill="Что спрашивают чаще всего?"><img class="pic" src="assets/chip-popular.png" alt="">Что спрашивают чаще всего</button>
+            <button class="sugg dim" id="rpgStart" title="ГигаЧат ведёт приключение, а вы играете вместе с друзьями"><img class="pic" src="assets/chip-dice.svg" alt="">Ролевая игра с друзьями</button>
             <button class="sugg" id="allIdeas" aria-expanded="false">Все идеи
               <img class="ico-chevron" src="assets/icon-chevron.svg" width="16" height="16" alt="">
               <img class="ico-close" src="assets/icon-close-ideas.svg" width="20" height="20" alt="">
@@ -259,7 +282,33 @@
 
       <button class="help" data-stub="Помощь"><img src="assets/icon-help.svg" width="16" height="16" alt="">Помощь</button>
 
+      <!-- Общий чат: кто в сети и приглашение -->
+      <div class="share-bar" id="shareBar">
+        <div class="people" id="people"></div>
+        <button class="invite-btn" id="inviteBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="invitePop">
+          <img src="assets/icon-invite.svg" width="16" height="16" alt=""><span>Пригласить</span>
+        </button>
+      </div>
+      <div class="invite-pop" id="invitePop" role="dialog" aria-label="Пригласить в чат" hidden>
+        <div class="ip-title">Пригласить в чат</div>
+        <div class="ip-text" id="ipText">Друг откроет ссылку и сможет писать здесь вместе с вами. ГигаЧат ответит всем.</div>
+        <label class="ip-name" id="ipNameRow">
+          <span>Как вас представить</span>
+          <input type="text" id="ipName" maxlength="24" placeholder="Ваше имя" autocomplete="nickname">
+        </label>
+        <div class="ip-link" id="ipLinkRow">
+          <input type="text" id="ipLink" readonly aria-label="Ссылка-приглашение" placeholder="Ссылка появится здесь">
+          <button class="btn btn-primary" id="ipCopy">Скопировать ссылку</button>
+        </div>
+        <div class="ip-people" id="ipPeople"></div>
+        <div class="ip-foot">
+          <span class="ip-note" id="ipNote">Чат работает, пока эта вкладка открыта</span>
+          <button class="link-btn ip-close" id="ipStop" hidden>Закрыть доступ</button>
+        </div>
+      </div>
+
       <div class="chat-bottom">
+        <div class="share-note" id="shareNote" hidden></div>
         <div class="chat-composer">
           <div class="cc-row">
             <button class="cc-btn" id="chatPlus" title="Добавить" aria-haspopup="menu" aria-expanded="false"><img src="assets/chat/icon-add.svg" width="24" height="24" alt=""></button>
@@ -269,6 +318,9 @@
           <div class="cc-row cc-modes">
             <button class="model-chip cc-model" id="chatModel" data-model="fast" aria-haspopup="menu" aria-expanded="false"><img class="model-ico" src="assets/icon-giga.svg" width="16" height="16" alt=""><span class="model-label">Быстрый</span><img class="chev" src="assets/icon-chevron.svg" width="16" height="16" alt=""></button>
             <span class="tool-slot" id="chatTool"></span>
+            <button class="dice-chip" id="chatDice" aria-haspopup="menu" aria-expanded="false" title="Бросить кубик" hidden>
+              <img src="assets/chip-dice.svg" width="18" height="18" alt=""><span>Кубик</span>
+            </button>
             <span class="cc-spacer"></span>
             <span class="cc-voice-label">Общаться<br>голосом</span>
             <button class="voice cc-send" id="chatSend" title="Голосовой режим">
@@ -376,12 +428,24 @@
 <div class="plus-menu" id="plusMenu" role="menu" aria-label="Добавить"></div>
 <input type="file" id="filePicker" multiple hidden>
 
+<!-- Кубики в ролевой игре: бросок считает браузер создателя чата -->
+<div class="dice-menu" id="diceMenu" role="menu" aria-label="Бросить кубик">
+  <button class="dice-opt" role="menuitem" data-die="4">d4</button>
+  <button class="dice-opt" role="menuitem" data-die="6">d6</button>
+  <button class="dice-opt" role="menuitem" data-die="8">d8</button>
+  <button class="dice-opt" role="menuitem" data-die="10">d10</button>
+  <button class="dice-opt" role="menuitem" data-die="12">d12</button>
+  <button class="dice-opt" role="menuitem" data-die="20">d20</button>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="lib/marked.min.js"></script>
 <script src="lib/purify.min.js"></script>
 <script src="config.js"></script>
 <script src="gate.js"></script>
+<script src="lib/peerjs.min.js"></script>
+<script src="share.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
