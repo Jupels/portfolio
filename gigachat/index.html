@@ -59,14 +59,19 @@
           <span class="sched-done" aria-label="Задача выполнена"><img src="assets/icon-check.svg" width="11" height="11" alt=""></span>
         </span>
       </a>
-      <a class="nav-item" id="moreToggle" tabindex="0" role="button" aria-expanded="false" aria-controls="navMore">
-        <img class="rot" src="assets/icon-more.svg" alt=""><span>Остальное</span>
-      </a>
+      <!-- Раскрытые разделы появляются над кнопкой, а кнопка уезжает вниз и становится «Свернуть» -->
       <div class="nav-more" id="navMore" data-open="false"><div class="nav-more-clip"><div class="nav-more-inner">
         <a class="nav-item" id="navVideo" tabindex="0"><img src="assets/icon-video.svg" alt=""><span>Видео</span></a>
         <a class="nav-item" id="navIdeas" tabindex="0"><img src="assets/icon-ideas.svg" alt=""><span>Идеи</span><span class="badge">Новое</span></a>
         <a class="nav-item" tabindex="0" data-stub="Подкасты"><img src="assets/icon-podcasts.svg" alt=""><span>Подкасты</span></a>
       </div></div></div>
+      <a class="nav-item more-toggle" id="moreToggle" tabindex="0" role="button" aria-expanded="false" aria-controls="navMore">
+        <span class="more-ico">
+          <img class="rot ico-more" src="assets/icon-more.svg" alt="">
+          <svg class="ico-collapse" viewBox="0 0 24 24" fill="none" stroke="#222325" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14.5 12 9.5l5 5"/></svg>
+        </span>
+        <span class="more-label"><span class="lbl-more">Остальное</span><span class="lbl-collapse">Свернуть</span></span>
+      </a>
     </nav>
 
     <div class="section-label projects-label">Проекты</div>

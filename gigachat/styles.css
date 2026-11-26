@@ -116,8 +116,19 @@ body.is-resizing .sidebar-resizer::after { opacity: 1; background: rgba(18, 38, 
 .nav-more-clip { overflow: hidden; min-height: 0; }
 .nav-more-inner {
   display: flex; flex-direction: column; gap: 2px;
-  padding-top: 2px;
+  padding-bottom: 2px;
 }
+/* Кнопка «Остальное» ↔ «Свернуть»: иконка и подпись меняются местами плавно */
+.more-ico { position: relative; width: 24px; height: 24px; flex: none; }
+.more-ico > * { position: absolute; inset: 0; width: 24px; height: 24px; transition: opacity .2s ease, transform .25s var(--ease-out); }
+.more-ico .ico-collapse { opacity: 0; transform: rotate(-90deg) scale(.7); }
+.more-toggle[aria-expanded="true"] .ico-more { opacity: 0; transform: rotate(90deg) scale(.7); }
+.more-toggle[aria-expanded="true"] .ico-collapse { opacity: 1; transform: none; }
+.more-label { display: grid; }
+.more-label > span { grid-area: 1 / 1; transition: opacity .2s ease, transform .25s var(--ease-out); }
+.more-label .lbl-collapse { opacity: 0; transform: translateY(6px); }
+.more-toggle[aria-expanded="true"] .lbl-more { opacity: 0; transform: translateY(-6px); }
+.more-toggle[aria-expanded="true"] .lbl-collapse { opacity: 1; transform: none; }
 .nav-more-inner .nav-item {
   opacity: 0; transform: translateY(-6px);
   transition: opacity .18s ease, transform .25s var(--ease-out), background-color .15s ease;
@@ -176,8 +187,11 @@ body.is-resizing .sidebar-resizer::after { opacity: 1; background: rgba(18, 38, 
   opacity: 0; transform: translateX(4px);
   transition: opacity .18s ease, transform .18s ease;
 }
+/* мышью — только при наведении; фокус показывает кнопки лишь при навигации с клавиатуры,
+   иначе после клика по шапке они «залипали» на свёрнутой папке */
 .folder-head:hover .folder-actions,
-.folder-head:focus-within .folder-actions { opacity: 1; transform: none; }
+.folder-head:focus-visible .folder-actions,
+.folder-actions:has(:focus-visible) { opacity: 1; transform: none; }
 .icon-btn { display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: background-color .15s; }
 .icon-btn:hover { background: rgba(8, 8, 8, 0.06); }
 

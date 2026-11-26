@@ -1256,16 +1256,18 @@
       return `<button class="pm-item" role="menuitem" data-pm="${it.id}">${svgIcon(it.icon)}<span class="pm-title">${it.title}</span><span class="pm-desc">${it.desc}</span></button>`;
     }).join('');
 
-    // ширина — как у поля ввода; открываемся туда, где больше места
+    // ширина — как у поля ввода. Открываемся вниз (если не влезает — список
+    // прокручивается внутри); вверх — только когда снизу почти нет места,
+    // как у нижнего поля в переписке
     const anchor = where === 'home' ? $('.view-home .composer') : chatComposer;
     const r = anchor.getBoundingClientRect();
     plusMenu.style.width = `${r.width}px`;
     plusMenu.style.left = `${r.left}px`;
     plusMenu.style.maxHeight = 'none';
     const natural = plusMenu.offsetHeight;
-    const below = window.innerHeight - r.bottom - 16;
-    const above = r.top - 16;
-    const up = natural > below && above > below;
+    const below = window.innerHeight - r.bottom - 24;
+    const above = r.top - 24;
+    const up = below < Math.min(natural, 220) && above > below;
     const h = Math.min(natural, up ? above : below);
     plusMenu.style.maxHeight = `${h}px`;
     plusMenu.style.top = `${up ? r.top - 8 - h : r.bottom + 8}px`;
