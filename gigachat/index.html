@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ГигаЧат — прототип</title>
+<link rel="icon" href="assets/icon-giga.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<!-- Вход по паролю (показывается, если ключ в config.js зашифрован) -->
+<div class="gate" id="gate" hidden>
+  <img class="gate-aurora" src="assets/aurora-ask.svg" width="1132" height="856.632" alt="">
+  <form class="gate-card" id="gateForm" autocomplete="off">
+    <img class="gate-logo" src="assets/logo.svg" width="97" height="40" alt="ГигаЧат">
+    <h1>Прототип ГигаЧата</h1>
+    <p>Введите пароль, чтобы открыть</p>
+    <div class="gate-field">
+      <input type="password" id="gatePass" placeholder="Пароль" autocomplete="current-password" aria-label="Пароль">
+      <button class="gate-go" type="submit" title="Открыть" aria-label="Открыть">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.2 4.2 20.4 11.3a.8.8 0 0 1 0 1.4L5.2 19.8a.7.7 0 0 1-1-.8L6.3 12 4.2 5a.7.7 0 0 1 1-.8z" fill="#fff"/></svg>
+      </button>
+    </div>
+    <label class="gate-remember"><input type="checkbox" id="gateRemember" checked> Запомнить на этом устройстве</label>
+    <div class="gate-error" id="gateError" role="alert"></div>
+  </form>
+</div>
+
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="sidebar-scroll" id="sidebarScroll">
+    <div class="logo"><img src="assets/logo.svg" width="97" height="40" alt="ГигаЧат"></div>
+
+    <nav class="nav">
+      <a class="nav-item" id="newChat" tabindex="0">
+        <img src="assets/icon-new-chat.svg" alt=""><span>Новый чат</span>
+      </a>
+      <a class="nav-item" id="navSearch" tabindex="0">
+        <img src="assets/icon-search.svg" alt=""><span>Поиск</span>
+      </a>
+      <a class="nav-item" tabindex="0" data-stub="Мой контент">
+        <img src="assets/icon-content.svg" alt=""><span>Мой контент</span>
+      </a>
+      <a class="nav-item" tabindex="0" data-stub="По расписанию" title="Ежедневная сводка: «Курс валют и новости рынка»">
+        <img src="assets/icon-calendar.svg" alt=""><span>По расписанию</span>
+        <span class="sched" id="sched">
+          <span class="sched-progress">
+            <svg viewBox="0 0 22 22" aria-hidden="true">
+              <circle cx="11" cy="11" r="7.79" fill="none" stroke="#C0C0C0" stroke-width="0.92"/>
+              <path id="schedPie" fill="#C0C0C0" d=""/>
+            </svg>
+            <span class="sched-time" id="schedTime">59с</span>
+          </span>
+          <span class="sched-done" aria-label="Задача выполнена"><img src="assets/icon-check.svg" width="11" height="11" alt=""></span>
+        </span>
+      </a>
+      <a class="nav-item" id="moreToggle" tabindex="0" role="button" aria-expanded="false" aria-controls="navMore">
+        <img class="rot" src="assets/icon-more.svg" alt=""><span>Остальное</span>
+      </a>
+      <div class="nav-more" id="navMore" data-open="false"><div class="nav-more-clip"><div class="nav-more-inner">
+        <a class="nav-item" id="navVideo" tabindex="0"><img src="assets/icon-video.svg" alt=""><span>Видео</span></a>
+        <a class="nav-item" id="navIdeas" tabindex="0"><img src="assets/icon-ideas.svg" alt=""><span>Идеи</span><span class="badge">Новое</span></a>
+        <a class="nav-item" tabindex="0" data-stub="Подкасты"><img src="assets/icon-podcasts.svg" alt=""><span>Подкасты</span></a>
+      </div></div></div>
+    </nav>
+
+    <div class="section-label projects-label">Проекты</div>
+    <div class="folders">
+      <div class="folder" data-open="false">
+        <div class="folder-head" tabindex="0" role="button" aria-expanded="false">
+          <img src="assets/icon-folder.svg" alt="">
+          <span class="folder-name">Образование</span>
+          <span class="folder-actions">
+            <button class="icon-btn" title="Действия с папкой" data-stub="Действия с папкой"><img src="assets/icon-kebab.svg" width="16" height="16" alt=""></button>
+            <button class="icon-btn" title="Новый чат в папке" data-act="folder-new"><img src="assets/icon-new-chat-sm.svg" width="24" height="24" alt=""></button>
+          </span>
+        </div>
+        <div class="folder-body"><div class="folder-clip"><div class="folder-children">
+          <img class="tree-line" src="assets/tree-line.svg" width="7.5" height="53.5" alt="">
+          <img class="tree-branch" src="assets/tree-branch.svg" width="7.5" height="9.5" alt="">
+          <a class="sub-chat" data-seed="f:ege"><span>Подготовка к ЕГЭ по физике</span></a>
+          <a class="sub-chat" data-seed="f:eng"><span>Английский: план на месяц</span></a>
+        </div></div></div>
+      </div>
+
+      <div class="folder" data-open="true">
+        <div class="folder-head" tabindex="0" role="button" aria-expanded="true">
+          <img src="assets/icon-folder.svg" alt="">
+          <span class="folder-name">Финансы</span>
+          <span class="folder-actions">
+            <button class="icon-btn" title="Действия с папкой" data-stub="Действия с папкой"><img src="assets/icon-kebab.svg" width="16" height="16" alt=""></button>
+            <button class="icon-btn" title="Новый чат в папке" data-act="folder-new"><img src="assets/icon-new-chat-sm.svg" width="24" height="24" alt=""></button>
+          </span>
+        </div>
+        <div class="folder-body"><div class="folder-clip"><div class="folder-children">
+          <img class="tree-line" src="assets/tree-line.svg" width="7.5" height="53.5" alt="">
+          <img class="tree-branch" src="assets/tree-branch.svg" width="7.5" height="9.5" alt="">
+          <a class="sub-chat" data-seed="f:budget" title="Задача в работе"><span>Бюджет семьи на ноябрь</span><img class="spin" src="assets/icon-loader.svg" width="16" height="16" alt=""></a>
+          <a class="sub-chat" data-seed="f:plan"><span>Планирование финансов на 2027</span></a>
+        </div></div></div>
+      </div>
+    </div>
+
+    <div class="section-label recent-label">Недавние чаты</div>
+    <div class="recent" id="recent">
+      <div class="recent-scroll" id="recentScroll"></div>
+    </div>
+
+    </div>
+
+    <div class="profile" tabindex="0" data-stub="Профиль">
+      <img src="assets/avatar.png" alt="">
+      <div>
+        <div class="profile-name">Александр</div>
+        <div class="profile-sub">Профиль</div>
+      </div>
+    </div>
+
+    <div class="sidebar-resizer" id="sidebarResizer" role="separator" aria-orientation="vertical"
+         aria-label="Ширина боковой панели" tabindex="0" title="Потяните, чтобы изменить ширину. Двойной клик — исходная ширина"></div>
+  </aside>
+
+  <!-- ============ MAIN CARD ============ -->
+  <main class="card" id="card" data-view="home" data-mode="ask" data-ideas="false">
+
+    <!-- Фон для переписки и видео (Figma 1:289) -->
+    <div class="page-bg" aria-hidden="true">
+      <img class="glow glow-cyan" src="assets/chat/glow-cyan.svg" width="1160" height="940" alt="">
+      <img class="glow glow-mint" src="assets/chat/glow-mint.svg" width="1140" height="980" alt="">
+      <img class="glow glow-blue" src="assets/chat/glow-blue.svg" width="1140" height="1000" alt="">
+      <img class="glow glow-warm" src="assets/chat/glow-warm.svg" width="1000" height="880" alt="">
+      <div class="noise"></div>
+    </div>
+
+    <!-- ===== Главная: Спросить / Поручить ===== -->
+    <section class="view view-home" aria-label="Главная">
+      <img class="aurora aurora-ask" src="assets/aurora-ask.svg" width="1132" height="856.632" alt="">
+      <img class="aurora aurora-delegate" src="assets/aurora-delegate.svg" width="1070.24" height="830.355" alt="">
+
+      <div class="toggle" role="tablist">
+        <span class="toggle-pill"></span>
+        <button class="seg" role="tab" data-mode="ask" aria-selected="true">Спросить</button>
+        <button class="seg" role="tab" data-mode="delegate" aria-selected="false">Поручить</button>
+      </div>
+
+      <button class="help" data-stub="Помощь"><img src="assets/icon-help.svg" width="16" height="16" alt="">Помощь</button>
+
+      <!-- Ideas feed -->
+      <section class="feed" id="feed" aria-label="Все идеи">
+        <div class="feed-inner">
+          <div class="filters" id="filters">
+            <button class="filter is-active">Всё</button>
+            <button class="filter filter-fav" title="Избранное"><img src="assets/icon-heart.svg" width="16" height="16" alt=""></button>
+            <button class="filter">Жизнь</button>
+            <button class="filter">Учёба</button>
+            <button class="filter">Работа</button>
+            <button class="filter">Родителям</button>
+            <button class="filter">Творчество</button>
+            <button class="filter filter-settings" data-static data-stub="Настройки ленты" title="Настроить ленту"><img src="assets/icon-settings.svg" width="16" height="16" alt=""></button>
+          </div>
+          <div class="masonry">
+            <div class="col">
+              <button class="idea" style="--i:0"><div class="idea-art"><img src="assets/ideas/jelly.png" alt=""></div><div class="idea-title">Сделай фигурку из стекла и желе</div></button>
+              <button class="idea" style="--i:4"><div class="idea-art"><img src="assets/ideas/pixel.png" alt=""></div><div class="idea-title">Нарисуй персонажа в пиксель-арте</div></button>
+              <button class="idea" style="--i:8"><div class="idea-art"><img src="assets/ideas/coloring.png" alt=""></div><div class="idea-title">Сделай раскраску для ребёнка</div></button>
+            </div>
+            <div class="col">
+              <button class="idea" style="--i:1"><div class="idea-art"><img src="assets/ideas/flowers.png" alt=""></div><div class="idea-title">Придумай весенний букет</div></button>
+              <button class="idea" style="--i:5"><div class="idea-art"><img src="assets/ideas/recipes.png" alt=""></div><div class="idea-title">Собери кубик с любимыми рецептами</div></button>
+            </div>
+            <div class="col">
+              <button class="idea" style="--i:2"><div class="idea-art"><img src="assets/ideas/motivation.png" alt=""></div><div class="idea-title">Замотивируй себя на работу</div></button>
+              <button class="idea" style="--i:6"><div class="idea-art tall"><img src="assets/ideas/anime.png" alt=""></div><div class="idea-title">Преврати себя в героя аниме</div></button>
+            </div>
+            <div class="col">
+              <button class="idea" style="--i:3"><div class="idea-art"><img src="assets/ideas/fox.png" alt=""></div><div class="idea-title">Создай маску лесного духа</div></button>
+              <button class="idea" style="--i:7"><div class="idea-art"><img src="assets/ideas/valentine.png" alt=""></div><div class="idea-title">Создай открытку ко Дню святого Валентина</div></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Greeting + input + per-mode content -->
+      <div class="assistant">
+        <h1 class="greeting">
+          <span data-for="ask">Александр, что сегодня интересует?</span>
+          <span data-for="delegate">Александр, что нужно сделать?</span>
+        </h1>
+
+        <div class="composer">
+          <div class="composer-row">
+            <input class="composer-input" id="input" type="text" placeholder="Опишите задачу" autocomplete="off">
+          </div>
+          <div class="modes-row">
+            <div class="chips">
+              <button class="chip chip-square" id="homePlus" title="Добавить" aria-haspopup="menu" aria-expanded="false"><img src="assets/icon-add.svg" width="20" height="20" alt=""></button>
+              <div class="mode-set">
+                <div class="set" data-for="ask">
+                  <button class="chip model-chip" id="homeModelAsk" data-model="fast" aria-haspopup="menu" aria-expanded="false"><img class="model-ico" src="assets/icon-giga.svg" width="16" height="16" alt=""><span class="model-label">Быстрый</span><img class="chev" src="assets/icon-chevron.svg" width="16" height="16" alt=""></button>
+                </div>
+                <div class="set" data-for="delegate">
+                  <button class="chip model-chip" id="homeModelTask" data-model="think" aria-haspopup="menu" aria-expanded="false"><img class="model-ico" src="assets/icon-reason.svg" width="16" height="16" alt=""><span class="model-label">Думающий</span><img class="chev" src="assets/icon-chevron.svg" width="16" height="16" alt=""></button>
+                  <button class="chip" data-act="pick-files"><img src="assets/icon-attach.svg" width="16" height="16" alt="">Файл</button>
+                </div>
+              </div>
+              <span class="tool-slot" id="homeTool"></span>
+            </div>
+            <div class="composer-right">
+              <button class="mic" id="homeMic" title="Голосовой ввод"><img src="assets/icon-mic.svg" width="24" height="24" alt=""></button>
+              <button class="voice" id="homeSend" title="Голосовой режим">
+                <img class="ico-voice" src="assets/icon-voice.svg" width="24" height="24" alt="">
+                <svg class="ico-send" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.2 4.2 20.4 11.3a.8.8 0 0 1 0 1.4L5.2 19.8a.7.7 0 0 1-1-.8L6.3 12 4.2 5a.7.7 0 0 1 1-.8z" fill="#fff"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="below">
+          <div class="suggestions" data-for="ask">
+            <button class="sugg dim" data-fill="Что умеет ГигаЧат?"><img class="pic" src="assets/chip-capability.png" alt="">Что умеет ГигаЧат</button>
+            <button class="sugg dim" data-fill="Что спрашивают чаще всего?"><img class="pic" src="assets/chip-popular.png" alt="">Что спрашивают чаще всего</button>
+            <button class="sugg" id="allIdeas" aria-expanded="false">Все идеи
+              <img class="ico-chevron" src="assets/icon-chevron.svg" width="16" height="16" alt="">
+              <img class="ico-close" src="assets/icon-close-ideas.svg" width="20" height="20" alt="">
+            </button>
+          </div>
+
+          <div class="continue" data-for="delegate" id="continue">
+            <h2>Продолжить работу</h2>
+            <div class="tasks" id="tasks"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Переписка (Figma 1:289) ===== -->
+    <section class="view view-chat" aria-label="Переписка" data-cmode="ask">
+      <!-- Сияние внизу карточки (Figma 69:11438), уходит за нижний край -->
+      <img class="chat-aurora chat-aurora-ask" src="assets/chat/aurora-bottom.svg" width="1278" height="956.526" alt="">
+      <img class="chat-aurora chat-aurora-task" src="assets/aurora-delegate.svg" width="1070.24" height="830.355" alt="">
+
+      <div class="chat-scroll" id="chatScroll"><div class="thread" id="thread"></div></div>
+
+      <div class="toggle chat-toggle" id="chatToggle" role="tablist" data-mode="ask" title="Режим следующего сообщения">
+        <span class="toggle-pill"></span>
+        <button class="seg" role="tab" data-cmode="ask" aria-selected="true">Спросить</button>
+        <button class="seg" role="tab" data-cmode="task" aria-selected="false">Поручить</button>
+      </div>
+
+      <button class="help" data-stub="Помощь"><img src="assets/icon-help.svg" width="16" height="16" alt="">Помощь</button>
+
+      <div class="chat-bottom">
+        <div class="chat-composer">
+          <div class="cc-row">
+            <button class="cc-btn" id="chatPlus" title="Добавить" aria-haspopup="menu" aria-expanded="false"><img src="assets/chat/icon-add.svg" width="24" height="24" alt=""></button>
+            <textarea class="cc-input" id="chatInput" rows="1" placeholder="Спросите ГигаЧат"></textarea>
+            <button class="cc-btn" id="chatMic" title="Голосовой ввод"><img src="assets/icon-mic.svg" width="24" height="24" alt=""></button>
+          </div>
+          <div class="cc-row cc-modes">
+            <button class="model-chip cc-model" id="chatModel" data-model="fast" aria-haspopup="menu" aria-expanded="false"><img class="model-ico" src="assets/icon-giga.svg" width="16" height="16" alt=""><span class="model-label">Быстрый</span><img class="chev" src="assets/icon-chevron.svg" width="16" height="16" alt=""></button>
+            <span class="tool-slot" id="chatTool"></span>
+            <span class="cc-spacer"></span>
+            <span class="cc-voice-label">Общаться<br>голосом</span>
+            <button class="voice cc-send" id="chatSend" title="Голосовой режим">
+              <img class="ico-voice" src="assets/icon-voice.svg" width="24" height="24" alt="">
+              <svg class="ico-send" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.2 4.2 20.4 11.3a.8.8 0 0 1 0 1.4L5.2 19.8a.7.7 0 0 1-1-.8L6.3 12 4.2 5a.7.7 0 0 1 1-.8z" fill="#fff"/></svg>
+              <span class="ico-stop"></span>
+            </button>
+          </div>
+        </div>
+        <div class="disclaimer">ГигаЧат может ошибаться — проверяйте его ответы</div>
+      </div>
+    </section>
+
+    <!-- ===== Идеи (Figma 34:1089) ===== -->
+    <section class="view view-ideas" aria-label="Идеи">
+      <div class="ideas-wrap">
+        <h1 class="ideas-title">Идеи</h1>
+        <div class="ideas-feed">
+          <div class="ideas-filters" id="ideasFilters">
+            <button class="ifilter is-active" data-cat="all">Всё</button>
+            <button class="ifilter ifilter-fav" data-cat="fav" title="Избранное"><img src="assets/icon-heart.svg" width="16" height="16" alt=""></button>
+            <button class="ifilter" data-cat="life">Жизнь</button>
+            <button class="ifilter" data-cat="study">Учёба</button>
+            <button class="ifilter" data-cat="work">Работа</button>
+            <button class="ifilter" data-cat="parents">Родителям</button>
+            <button class="ifilter" data-cat="create">Творчество</button>
+            <button class="ifilter ifilter-settings" data-stub="Настройки ленты" title="Настроить ленту"><img src="assets/icon-settings.svg" width="16" height="16" alt=""></button>
+          </div>
+          <div class="ideas-grid" id="ideasGrid"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Видео (Figma 34:1038) ===== -->
+    <section class="view view-video" aria-label="Новое видео">
+      <div class="video-wrap">
+        <div class="video-head">
+          <h1>Новое видео</h1>
+          <span class="video-limit" title="Лимит обновится завтра">10 из 10 запросов на сегодня <img src="assets/video/icon-info.svg" width="18" height="18" alt=""></span>
+        </div>
+        <div class="video-card">
+          <div class="video-media">
+            <button class="video-add" data-stub="Загрузка референсов"><img src="assets/video/icon-plus.svg" width="24" height="24" alt=""><span class="va-t">Добавить</span><span class="va-s">Не более 3</span></button>
+          </div>
+          <div class="video-prompt">
+            <textarea id="videoInput" maxlength="2000" placeholder="Опишите видео, например: белый кролик залезает в нору и говорит «Привет!»"></textarea>
+            <span class="video-count" id="videoCount">2000</span>
+          </div>
+          <div class="video-controls">
+            <button class="vchip" data-cycle="16:9|9:16|1:1">16:9</button>
+            <button class="vchip" disabled>Стартовый кадр</button>
+            <button class="vchip" data-cycle="Full HD|HD">Full HD</button>
+            <button class="vchip" data-cycle="5 с|10 с">5 с</button>
+            <button class="vchip" data-cycle="Камера · Авто|Камера · Наезд|Камера · Облёт|Камера · Статика">Камера · Авто</button>
+            <button class="vchip vchip-icon" id="videoSound" title="Звук включён"><img src="assets/video/icon-sound.svg" width="18" height="18" alt=""></button>
+            <span class="vchip vchip-credits" title="Стоимость в кредитах"><img src="assets/video/icon-sparkle.svg" width="16" height="16" alt="">3</span>
+            <button class="video-go" id="videoGo" title="Создать видео"><img src="assets/video/icon-arrow.svg" width="20" height="20" alt=""></button>
+          </div>
+        </div>
+        <div class="video-examples-label">Начните с примера</div>
+        <div class="video-examples">
+          <button class="vex" data-prompt="Пиксельный лес на закате: камера медленно летит между деревьями, светлячки, стиль 16-бит"><img src="assets/video/pixel-forest.png" alt=""><span>Пиксельный лес</span></button>
+          <button class="vex" data-prompt="Оживи старинную фреску: персонажи плавно поворачивают головы, ткань колышется от ветра"><img src="assets/video/fresco.png" alt=""><span>Оживление фрески</span></button>
+          <button class="vex" data-prompt="Плюшевый мишка протягивает букет тюльпанов и машет лапой: «С днём рождения, мама!»"><img src="assets/video/birthday.png" alt=""><span>Поздравление мамы с днём рождения</span></button>
+          <button class="vex" data-prompt="Персонаж раскладывает карты таро при свечах, мягкий тёплый свет, медленный наезд камеры"><img src="assets/video/cards.png" alt=""><span>Персонаж с картами</span></button>
+          <button class="vex" data-prompt="Человек медитирует на лугу, вокруг кружатся одуванчики, камера медленно облетает его"><img src="assets/video/minion.png" alt=""><span>Миньон</span></button>
+          <button class="vex" data-prompt="Ночная башня переливается огнями, камера медленно поднимается снизу вверх"><img src="assets/video/tower.png" alt=""><span>Сияние башни</span></button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Меню режима ответа (общее для главной и переписки) -->
+<div class="model-menu" id="modelMenu" role="menu" aria-label="Режим ответа">
+  <div class="model-menu-label">Режим ответа</div>
+  <button class="model-opt" data-model="fast" role="menuitemradio">
+    <span class="model-opt-ico"><img src="assets/icon-giga.svg" width="16" height="16" alt=""></span>
+    <span class="model-opt-text">
+      <span class="model-opt-title">Быстрый</span>
+      <span class="model-opt-desc">Отвечает сразу. Для простых вопросов и повседневных дел</span>
+    </span>
+    <svg class="model-opt-check" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10l3.5 3.5L15.5 6.5" fill="none" stroke="#122654" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <button class="model-opt" data-model="think" role="menuitemradio">
+    <span class="model-opt-ico"><img src="assets/icon-reason.svg" width="16" height="16" alt=""></span>
+    <span class="model-opt-text">
+      <span class="model-opt-title">Думающий</span>
+      <span class="model-opt-desc">Думает дольше, зато точнее. Для сложных задач и расчётов</span>
+    </span>
+    <svg class="model-opt-check" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10l3.5 3.5L15.5 6.5" fill="none" stroke="#122654" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+</div>
+
+<!-- Поиск по чатам -->
+<div class="search" id="search" hidden>
+  <div class="search-panel" role="dialog" aria-modal="true" aria-label="Поиск по чатам">
+    <div class="search-field">
+      <img src="assets/icon-search.svg" width="20" height="20" alt="">
+      <input id="searchInput" type="text" placeholder="Поиск по чатам" autocomplete="off">
+      <kbd>Esc</kbd>
+    </div>
+    <div class="search-list" id="searchList"></div>
+  </div>
+</div>
+
+<!-- Меню «+»: состав зависит от режима (Спросить / Поручить) -->
+<div class="plus-menu" id="plusMenu" role="menu" aria-label="Добавить"></div>
+<input type="file" id="filePicker" multiple hidden>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="lib/marked.min.js"></script>
+<script src="lib/purify.min.js"></script>
+<script src="config.js"></script>
+<script src="gate.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
