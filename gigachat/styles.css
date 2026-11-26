@@ -392,8 +392,11 @@ body.is-resizing .sidebar-resizer::after { opacity: 1; background: rgba(18, 38, 
 .model-opt-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding-top: 1px; }
 .model-opt-title { font-size: 14px; line-height: 18px; font-weight: 500; color: var(--text-primary); }
 .model-opt-desc { font-size: 12px; line-height: 16px; color: var(--text-secondary); }
-.model-opt-check { flex: none; margin-top: 6px; opacity: 0; transition: opacity .15s; }
-.model-opt[aria-checked="true"] .model-opt-check { opacity: 1; }
+/* выбранный режим — тот же фон, что при наведении, только постоянный */
+.model-opt[aria-checked="true"] { background: #f6f6f6; }
+.model-opt[aria-checked="true"] .model-opt-ico,
+.model-opt:hover .model-opt-ico { background: #fff; }
+.model-opt-ico { transition: background-color .15s; }
 .mode-set { display: grid; }
 .mode-set > .set {
   grid-area: 1 / 1;
