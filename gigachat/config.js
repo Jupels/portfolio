@@ -4,9 +4,9 @@
 window.GIGA_CONFIG = {
   model: 'deepseek/deepseek-v4.1-flash',
   encryptedKey: {
-    salt: 'jYsqcqCeqKQM8tVaAj4PeQ==',
-    iv: 'cWIZwa6ckjRIQ2NI',
+    salt: 'auFmS7HNcK7kmxsda5OK3w==',
+    iv: 'gx3KEbiU1DNNu/t8',
     iterations: 250000,
-    data: 'SiAT5gPAtuVq35KPMO01Z03BZeaYLb68FQiYl7dU+NyfPfcTUNyx1mkj779jx3qz6R1uATAC+g0DudUobWtHmaHlqRApTL+U2tYFzrkZmvL2z77WiKfXswo=',
+    data: 'iR0a5J5H0OrqPkc2S8v6QDrxVzEjibgXFDDCepFsWNTC8FI5gRsbU89NsWepPpsvywnIP1F+IzJuaRTSGcfWdfZampcRJWs9NrIbFNtvSTUjlwmgkOtUhi8=',
   },
 };
