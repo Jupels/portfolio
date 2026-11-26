@@ -9,9 +9,12 @@
   const enc = CFG.encryptedKey;
   const root = document.documentElement;
   const join = /^#join=[a-z0-9]{6,32}\.[a-z0-9]{6,32}$/.test(location.hash);
-  if (join) root.classList.add('is-locked');
+  // страница приходит закрытой (class="is-locked" в разметке); без шифрованного ключа
+  // пароля нет — открываем сразу, гостевой вход по-прежнему открывает app.js
+  root.classList.add('is-locked');
   if (!enc) {
     window.GIGA_GATE = { ensure: async () => true };
+    if (!join) root.classList.remove('is-locked');
     return;
   }
 
