@@ -128,7 +128,7 @@
       prompt: 'Составь бюджет семьи из трёх человек на ноябрь: доход 150 000 ₽, ипотека 45 000 ₽, детский сад 12 000 ₽. Остальное распредели по категориям и заложи накопления' },
     'f:plan': { title: 'Планирование финансов на 2027', mode: 'ask', folder: 'fin',
       prompt: 'Помоги спланировать личные финансы на 2027 год: цели, подушка безопасности, накопления и инвестиции' },
-    'c:ozon': { title: 'Исследование для Озона', sub: 'Проверить рассчет', look: 'review', mode: 'task', card: true,
+    'c:ozon': { title: 'Исследование для Озона', sub: 'Проверить расчёт', look: 'review', mode: 'task', card: true,
       prompt: 'Проведи исследование: как небольшому продавцу выйти на маркетплейс Озон — комиссии, логистика, первые шаги и примерный расчёт юнит-экономики' },
     'c:cu': { title: 'Поступления в ЦУ', sub: 'Заявка готова', look: 'done', mode: 'task', card: true,
       prompt: 'Подготовь заявку на поступление в Центральный университет: требования, документы, сроки и черновик мотивационного письма' },
@@ -177,6 +177,19 @@
     // задачи из ранних версий прототипа получают id, результат привязывается к задаче
     if (t.task && !t.task.id) t.task.id = uid();
     for (const m of t.messages) if (m.kind === 'result' && !m.taskId && t.task) m.taskId = t.task.id;
+  }
+
+  // Карточки «Продолжить работу» теперь открывают готовые чаты-заготовки (fakes.js).
+  // Чаты, созданные по ним раньше, отвязываем и убираем из карточек, в недавних они остаются.
+  const FAKES = window.GIGA_FAKES || { threads: {}, docs: {} };
+  for (const key of Object.keys(FAKES.threads)) {
+    const old = state.threads[state.seeds[key]];
+    if (old && old.fake !== key) {
+      delete state.seeds[key];
+      // чат, где была только стартовая формулировка карточки, удаляем; с вашей перепиской — оставляем
+      if (old.messages.filter(m => m.role === 'user').length <= 1) delete state.threads[old.id];
+      else if (!state.hidden.includes(old.id)) state.hidden.push(old.id);
+    }
   }
 
   const threadList = () => Object.values(state.threads).sort((a, b) => b.updatedAt - a.updatedAt);
@@ -469,6 +482,7 @@
     if (!s) return;
     const existing = state.threads[state.seeds[key]];
     if (existing) return openThread(existing.id);
+    if (FAKES.threads[key]) return openFake(key);
     const t = createThread({
       mode: s.mode, model: s.mode === 'task' && !s.autoRun ? 'think' : 'fast',
       title: s.title, titleLocked: true, folder: s.folder || null,
@@ -477,6 +491,25 @@
     save();
     openThread(t.id);
     if (s.mode === 'task') startTask(t, s.prompt, { autoRun: s.autoRun }); else sendAsk(t, s.prompt);
+  }
+
+  // Готовый чат: переписка, выполненный план и файлы — всё из заготовки
+  function openFake(key) {
+    const f = FAKES.threads[key];
+    const t = createThread({ mode: 'task', model: 'think', title: f.title, titleLocked: true, fake: key, cardLook: f.cardLook, cardSub: f.cardSub });
+    const taskId = uid();
+    t.messages = f.messages(taskId).map(m => ({ ...m, id: uid() }));
+    const plan = t.messages.find(m => m.kind === 'plan');
+    if (plan) {
+      // задача завершилась пару часов назад и шла столько, сколько записано в заготовке
+      const took = plan.task.finishedAt - plan.task.startedAt;
+      plan.task.startedAt = Date.now() - 2 * 3600e3;
+      plan.task.finishedAt = plan.task.startedAt + took;
+      t.task = plan.task;
+    }
+    state.seeds[key] = t.id;
+    save();
+    openThread(t.id);
   }
 
   function pushMsg(t, m) {
@@ -636,7 +669,8 @@
           `<span class="roll-die">d${m.die}</span><span class="roll-arrow">→</span><b>${m.value}</b></div></div>`;
       }
       const tag = m.tool && TOOLS[m.tool] ? `<div class="bubble-tag">${svgIcon(TOOLS[m.tool].icon)}${TOOLS[m.tool].tag}</div>` : '';
-      return `<div class="msg msg-user${cls}" data-mid="${m.id}"${style}>${head}${tag}<div class="bubble">${esc(m.content)}</div>` +
+      const files = m.files?.length ? `<div class="msg-files is-user">${m.files.map(fileChipHTML).join('')}</div>` : '';
+      return `<div class="msg msg-user${cls}" data-mid="${m.id}"${style}>${head}${tag}${files}<div class="bubble">${esc(m.content)}</div>` +
         `<button class="act" data-act="copy" title="Копировать">${ICON('copy')}</button></div>`;
     }
     if (m.kind === 'plan') return `<div class="msg msg-ai msg-plan" data-mid="${m.id}">${planHTML(t, m)}</div>`;
@@ -652,6 +686,7 @@
         `<div class="reasoning-body">${esc(m.reasoning)}</div></div>`;
     }
     if (m.content) h += `<div class="md">${renderMd(m.content)}</div>`;
+    if (m.files?.length && m.status === 'done') h += `<div class="msg-files">${m.files.map(fileCardHTML).join('')}</div>`;
     else if (m.status === 'streaming' && !m.reasoning) h += `<div class="typing">${DOTS}${t.model === 'think' ? 'Думаю…' : 'Печатает…'}</div>`;
     if (m.status === 'error') {
       h += `<div class="msg-error">${esc(m.error || 'Не удалось получить ответ')}` +
@@ -739,6 +774,8 @@
 
   function startTask(t, text, { autoRun = false, tool = null } = {}) {
     t.mode = 'task';
+    delete t.cardLook;
+    delete t.cardSub;
     archiveTask(t);
     pushMsg(t, tool ? { role: 'user', content: text, tool } : { role: 'user', content: text });
     t.task = { id: uid(), goal: text + toolHint(tool), status: 'planning' };
@@ -898,6 +935,8 @@
       case 'speak': speak(t, m); break;
       case 'podcast': toast('Подкасты в прототипе не подключены'); break;
       case 'reasoning': m.reasoningOpen = !m.reasoningOpen; updateMsgEl(t, m); break;
+      case 'file-open': openDoc(b.dataset.doc); break;
+      case 'file-dl': fakeDownload(b.dataset.doc); break;
       case 'suggest':
         if (isGroup(t)) say(t, b.dataset.text);
         else if (!isBusy(t)) sendAsk(t, b.dataset.text);
@@ -1129,7 +1168,7 @@
     const items = [];
     for (const t of threadList()) {
       if (!t.task || hidden.has(t.id)) continue;
-      const [look, sub] = taskLook(t);
+      const [look, sub] = t.cardLook ? [t.cardLook, t.cardSub] : taskLook(t);
       items.push({ key: t.id, tid: t.id, title: t.title, sub, look });
     }
     for (const [k, s] of Object.entries(SEEDS)) {
@@ -1559,6 +1598,7 @@
   document.addEventListener('keydown', e => {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); search.hidden ? openSearch() : closeSearch(); return; }
     if (e.key !== 'Escape') return;
+    if (!docView.hidden) { closeDoc(); return; }
     if (!search.hidden) { closeSearch(); return; }
     if (plusCtx) { const b = plusCtx.btn; closePlusMenu(); b.focus(); return; }
     if (activeChip) { const c = activeChip; closeModelMenu(); c.focus(); return; }
@@ -1708,6 +1748,79 @@
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
+
+  /* =====================================================================
+     Файлы-результаты в чатах-заготовках: карточки с миниатюрой и просмотр.
+     Скачать их нельзя — это демо-файлы прототипа.
+     ===================================================================== */
+  const DOCS = FAKES.docs;
+  const FILE_KIND = {
+    pdf: ['PDF', '#e5484d'], docx: ['DOC', '#2f6fed'], xlsx: ['XLS', '#1e9e5a'], pptx: ['PPT', '#ea6a1e'], csv: ['CSV', '#64748b'],
+  };
+  const DOC_W = { pdf: 595, docx: 595, xlsx: 760, csv: 760, pptx: 800 }; // ширина страницы документа
+  const THUMB_W = 232;
+  const DL_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>';
+  function fileIcon(type, w = 20) {
+    const [label, color] = FILE_KIND[type] || ['FILE', '#64748b'];
+    return `<svg class="file-ico" width="${w}" height="${Math.round(w * 32 / 28)}" viewBox="0 0 28 32" aria-hidden="true">` +
+      `<path d="M4 0h14l10 10v18a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4V4a4 4 0 0 1 4-4z" fill="${color}"/>` +
+      '<path d="M18 0v6a4 4 0 0 0 4 4h6z" fill="#fff" fill-opacity=".45"/>' +
+      `<text x="14" y="25" text-anchor="middle" font-size="7.5" font-weight="700" fill="#fff" font-family="Inter, -apple-system, sans-serif">${label}</text></svg>`;
+  }
+  const thumbCache = {};
+  function fileCardHTML(key) {
+    const d = DOCS[key];
+    if (!d) return '';
+    const w = DOC_W[d.type] || 595;
+    const first = thumbCache[key] || (thumbCache[key] = d.render()[0]);
+    return `<div class="file-card" data-act="file-open" data-doc="${key}" role="button" tabindex="0" title="Открыть «${esc(d.name)}»">` +
+      `<div class="fc-thumb is-${d.type}"><div class="fc-page" style="width:${w}px;transform:scale(${((THUMB_W - 32) / w).toFixed(4)})">${first}</div>` +
+      '<span class="fc-open">Открыть</span></div>' +
+      `<div class="fc-foot">${fileIcon(d.type)}<div class="fc-text"><div class="fc-name">${esc(d.name)}</div><div class="fc-meta">${esc(d.meta)}</div></div>` +
+      `<button class="fc-dl" data-act="file-dl" data-doc="${key}" title="Скачать">${DL_ICON}</button></div></div>`;
+  }
+  function fileChipHTML(key) {
+    const d = DOCS[key];
+    if (!d) return '';
+    return `<button class="file-chip" data-act="file-open" data-doc="${key}" title="Открыть «${esc(d.name)}»">${fileIcon(d.type, 24)}` +
+      `<span class="fc-text"><span class="fc-name">${esc(d.name)}</span><span class="fc-meta">${esc(d.meta)}</span></span></button>`;
+  }
+  function fakeDownload(key) {
+    const d = DOCS[key];
+    if (d) toast(`«${d.name}» — демо-файл, в прототипе он не скачивается`);
+  }
+
+  const docView = $('#docView');
+  let docKey = null, docFrom = null;
+  function openDoc(key) {
+    const d = DOCS[key];
+    if (!d) return;
+    docKey = key;
+    docFrom = document.activeElement;
+    $('#dvIcon').innerHTML = fileIcon(d.type, 28);
+    $('#dvName').textContent = d.name;
+    $('#dvMeta').textContent = d.meta;
+    const pages = d.render();
+    const more = (d.pages || pages.length) - pages.length;
+    const unit = d.type === 'pptx' ? ['слайд', 'слайда', 'слайдов'] : ['страница', 'страницы', 'страниц'];
+    $('#dvBody').innerHTML = pages.map(pg => `<div class="dv-page is-${d.type}">${pg}</div>`).join('') +
+      (more > 0 ? `<div class="dv-more">Ещё ${more} ${plural(more, ...unit)} — в прототипе показано начало документа</div>` : '');
+    $('#dvBody').scrollTop = 0;
+    docView.hidden = false;
+    $('#dvClose').focus();
+  }
+  function closeDoc() {
+    if (docView.hidden) return;
+    docView.hidden = true;
+    docKey = null;
+    docFrom?.focus?.();
+  }
+  $('#dvClose').addEventListener('click', closeDoc);
+  $('#dvDownload').addEventListener('click', () => docKey && fakeDownload(docKey));
+  docView.addEventListener('mousedown', e => { if (e.target === docView) closeDoc(); });
+  threadEl.addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.classList?.contains('file-card')) { e.preventDefault(); openDoc(e.target.dataset.doc); }
+  });
 
   /* =====================================================================
      Общий чат: друзья пишут в один тред, ГигаЧат отвечает всем.
@@ -2088,8 +2201,10 @@
         break;
       }
       case 'roll':
-        if (t.preset !== 'rpg' || !DICE.includes(d.die) || now - link.last < 700) return;
-        link.last = now;
+        if (t.preset !== 'rpg' || !DICE.includes(d.die)) return;
+        // у бросков свой лимит: написать действие и сразу бросить кубик — нормально
+        if (now - (link.lastRoll || 0) < 700) { link.conn.send({ t: 'reject', reason: 'Кубик можно бросать не чаще раза в секунду' }); return; }
+        link.lastRoll = now;
         groupPush(t, { role: 'user', kind: 'roll', die: d.die, value: rollDie(d.die), author: { id: link.pid, name: personName(t, link.pid) } });
         break;
       case 'typing':

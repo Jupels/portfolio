@@ -315,25 +315,28 @@
 
       <div class="chat-bottom">
         <div class="share-note" id="shareNote" hidden></div>
+        <!-- Поле как на главной: сверху текст, снизу чипы, микрофон и кнопка -->
         <div class="chat-composer">
-          <div class="cc-row">
-            <button class="cc-btn" id="chatPlus" title="Добавить" aria-haspopup="menu" aria-expanded="false"><img src="assets/chat/icon-add.svg" width="24" height="24" alt=""></button>
+          <div class="cc-row cc-text">
             <textarea class="cc-input" id="chatInput" rows="1" placeholder="Спросите ГигаЧат"></textarea>
-            <button class="cc-btn" id="chatMic" title="Голосовой ввод"><img src="assets/icon-mic.svg" width="24" height="24" alt=""></button>
           </div>
           <div class="cc-row cc-modes">
-            <button class="model-chip cc-model" id="chatModel" data-model="fast" aria-haspopup="menu" aria-expanded="false"><img class="model-ico" src="assets/icon-giga.svg" width="16" height="16" alt=""><span class="model-label">Быстрый</span><img class="chev" src="assets/icon-chevron.svg" width="16" height="16" alt=""></button>
-            <span class="tool-slot" id="chatTool"></span>
-            <button class="dice-chip" id="chatDice" aria-haspopup="menu" aria-expanded="false" title="Бросить кубик" hidden>
-              <img src="assets/chip-dice.svg" width="18" height="18" alt=""><span>Кубик</span>
-            </button>
-            <span class="cc-spacer"></span>
-            <span class="cc-voice-label">Общаться<br>голосом</span>
-            <button class="voice cc-send" id="chatSend" title="Голосовой режим">
-              <img class="ico-voice" src="assets/icon-voice.svg" width="24" height="24" alt="">
-              <svg class="ico-send" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.2 4.2 20.4 11.3a.8.8 0 0 1 0 1.4L5.2 19.8a.7.7 0 0 1-1-.8L6.3 12 4.2 5a.7.7 0 0 1 1-.8z" fill="#fff"/></svg>
-              <span class="ico-stop"></span>
-            </button>
+            <div class="chips">
+              <button class="chip chip-square" id="chatPlus" title="Добавить" aria-haspopup="menu" aria-expanded="false"><img src="assets/icon-add.svg" width="20" height="20" alt=""></button>
+              <button class="chip model-chip" id="chatModel" data-model="fast" aria-haspopup="menu" aria-expanded="false"><img class="model-ico" src="assets/icon-giga.svg" width="16" height="16" alt=""><span class="model-label">Быстрый</span><img class="chev" src="assets/icon-chevron.svg" width="16" height="16" alt=""></button>
+              <span class="tool-slot" id="chatTool"></span>
+              <button class="chip dice-chip" id="chatDice" aria-haspopup="menu" aria-expanded="false" title="Бросить кубик" hidden>
+                <img src="assets/chip-dice.svg" width="16" height="16" alt=""><span>Кубик</span>
+              </button>
+            </div>
+            <div class="composer-right">
+              <button class="mic" id="chatMic" title="Голосовой ввод"><img src="assets/icon-mic.svg" width="24" height="24" alt=""></button>
+              <button class="voice cc-send" id="chatSend" title="Голосовой режим">
+                <img class="ico-voice" src="assets/icon-voice.svg" width="24" height="24" alt="">
+                <svg class="ico-send" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.2 4.2 20.4 11.3a.8.8 0 0 1 0 1.4L5.2 19.8a.7.7 0 0 1-1-.8L6.3 12 4.2 5a.7.7 0 0 1 1-.8z" fill="#fff"/></svg>
+                <span class="ico-stop"></span>
+              </button>
+            </div>
           </div>
         </div>
         <div class="disclaimer">ГигаЧат может ошибаться — проверяйте его ответы</div>
@@ -444,6 +447,19 @@
   <button class="dice-opt" role="menuitem" data-die="20">d20</button>
 </div>
 
+<!-- Просмотр файла-результата (демо: файлы ненастоящие) -->
+<div class="doc-view" id="docView" hidden>
+  <div class="dv-panel" role="dialog" aria-modal="true" aria-labelledby="dvName">
+    <div class="dv-head">
+      <span class="dv-icon" id="dvIcon"></span>
+      <div class="dv-title"><div class="dv-name" id="dvName"></div><div class="dv-meta" id="dvMeta"></div></div>
+      <button class="btn btn-ghost dv-btn" id="dvDownload"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>Скачать</button>
+      <button class="dv-close" id="dvClose" title="Закрыть" aria-label="Закрыть"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button>
+    </div>
+    <div class="dv-body" id="dvBody"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="lib/marked.min.js"></script>
@@ -451,6 +467,7 @@
 <script src="config.js"></script>
 <script src="gate.js"></script>
 <script src="share.js"></script>
+<script src="fakes.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
