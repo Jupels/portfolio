@@ -282,9 +282,16 @@
 
       <button class="help" data-stub="Помощь"><img src="assets/icon-help.svg" width="16" height="16" alt="">Помощь</button>
 
-      <!-- Общий чат: кто в сети и приглашение -->
+      <!-- Общий чат: кто в чате (вместо переключателя режимов) и приглашение -->
+      <button class="people-pill" id="peoplePill" aria-haspopup="dialog" aria-expanded="false" aria-controls="peoplePop" hidden>
+        <span class="pp-stack" id="ppStack"></span><span class="pp-text" id="ppText"></span>
+        <img class="chev" src="assets/icon-chevron.svg" width="16" height="16" alt="">
+      </button>
+      <div class="people-pop" id="peoplePop" role="dialog" aria-label="Участники чата" hidden>
+        <div class="pp-head"><span class="pp-title">Участники</span><span class="pp-count" id="ppCount"></span></div>
+        <div class="pp-list" id="ppList"></div>
+      </div>
       <div class="share-bar" id="shareBar">
-        <div class="people" id="people"></div>
         <button class="invite-btn" id="inviteBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="invitePop">
           <img src="assets/icon-invite.svg" width="16" height="16" alt=""><span>Пригласить</span>
         </button>
@@ -300,7 +307,6 @@
           <input type="text" id="ipLink" readonly aria-label="Ссылка-приглашение" placeholder="Ссылка появится здесь">
           <button class="btn btn-primary" id="ipCopy">Скопировать ссылку</button>
         </div>
-        <div class="ip-people" id="ipPeople"></div>
         <div class="ip-foot">
           <span class="ip-note" id="ipNote">Чат работает, пока эта вкладка открыта</span>
           <button class="link-btn ip-close" id="ipStop" hidden>Закрыть доступ</button>
@@ -444,7 +450,6 @@
 <script src="lib/purify.min.js"></script>
 <script src="config.js"></script>
 <script src="gate.js"></script>
-<script src="lib/peerjs.min.js"></script>
 <script src="share.js"></script>
 <script src="app.js"></script>
 </body>

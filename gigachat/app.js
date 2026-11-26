@@ -353,6 +353,7 @@
     closePlusMenu();
     stopSpeaking();
     closeInvite();
+    closePeople();
     closeDice();
     if (view !== 'chat') typingOff();
     card.dataset.view = view;
@@ -444,6 +445,7 @@
     stopSpeaking();
     closeModelMenu();
     closeInvite();
+    closePeople();
     closeDice();
     setIdeas(false);
     if (runtime.activeId && runtime.activeId !== id) typingOff();
@@ -625,7 +627,7 @@
           cls += ' is-other';
           style = ` style="--tint:${tn.bg};--tint-av:${tn.av};--tint-fg:${tn.fg}"`;
           const name = authorName(t, m);
-          if (first) head = `<div class="msg-author"><span class="av av-sm">${esc(initial(name))}</span>${esc(name)}</div>`;
+          if (first) head = `<div class="msg-author">${avatarHTML(t, authorId(m), 'av-sm')}${esc(name)}</div>`;
         }
       }
       if (m.kind === 'roll') {
@@ -1562,6 +1564,7 @@
     if (activeChip) { const c = activeChip; closeModelMenu(); c.focus(); return; }
     if (diceOpen) { closeDice(); chatDice.focus(); return; }
     if (!invitePop.hidden) { closeInvite(); inviteBtn.focus(); return; }
+    if (!peoplePop.hidden) { closePeople(); peoplePill.focus(); return; }
     if (card.dataset.ideas === 'true') setIdeas(false);
   });
 
@@ -1718,18 +1721,29 @@
   const SNAPSHOT = 150;
   // оттенки участников: фон пузыря, кружок аватара, текст
   const TINTS = [
-    { bg: '#efebfd', av: '#dcd3fa', fg: '#4a3a8c' },
-    { bg: '#e7f5ee', av: '#c8eadb', fg: '#1f6646' },
-    { bg: '#fdefe6', av: '#f7d8c3', fg: '#88481d' },
-    { bg: '#e8f0fc', av: '#cfdff8', fg: '#214c86' },
-    { bg: '#fcedf1', av: '#f5d0db', fg: '#882746' },
+    { bg: '#efebfd', av: '#e2dafc', fg: '#4a3a8c' }, // сиреневый
+    { bg: '#e7f5ee', av: '#d0eee0', fg: '#1f6646' }, // мятный
+    { bg: '#fdefe6', av: '#fbe0cd', fg: '#88481d' }, // персиковый
+    { bg: '#e8f0fc', av: '#d6e5fa', fg: '#214c86' }, // голубой
+    { bg: '#fcedf1', av: '#f8d9e2', fg: '#882746' }, // розовый
+    { bg: '#fcf5df', av: '#f7eab8', fg: '#755608' }, // солнечный
+    { bg: '#e3f4f4', av: '#cdeaea', fg: '#1d5f63' }, // бирюзовый
+    { bg: '#f1f1ee', av: '#e4e4df', fg: '#55554d' }, // серый
   ];
-  const GUEST_TINTS = [0, 1, 2, 4];
-  const HOST_TINT = 3;
+  // Каждому участнику при входе достаётся животное (как в Google Документах);
+  // у животного свой цвет — им же подсвечены его реплики
+  const ANIMALS = [
+    { e: '🦊', n: 'лиса', t: 2 }, { e: '🐼', n: 'панда', t: 7 }, { e: '🐸', n: 'лягушка', t: 1 },
+    { e: '🦉', n: 'сова', t: 0 }, { e: '🐧', n: 'пингвин', t: 3 }, { e: '🐙', n: 'осьминог', t: 4 },
+    { e: '🦁', n: 'лев', t: 5 }, { e: '🐢', n: 'черепаха', t: 6 }, { e: '🐨', n: 'коала', t: 7 },
+    { e: '🦔', n: 'ёж', t: 2 }, { e: '🐳', n: 'кит', t: 3 }, { e: '🐰', n: 'кролик', t: 4 },
+    { e: '🦄', n: 'единорог', t: 0 }, { e: '🐝', n: 'пчела', t: 5 }, { e: '🦦', n: 'выдра', t: 6 },
+    { e: '🐻', n: 'медведь', t: 2 },
+  ];
+  const validAnimal = a => (Number.isInteger(a) && a >= 0 && a < ANIMALS.length ? a : null);
 
   const cleanName = s => String(s || '').replace(/[\u0000-\u001f\u007f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 24);
   const validPid = s => (typeof s === 'string' && /^(h|g[a-z0-9]{6})$/.test(s) ? s : null);
-  const initial = name => (Array.from(String(name || '?').trim())[0] || '?').toUpperCase();
 
   const sh = {
     name: '',            // моё имя в общих чатах
@@ -1756,8 +1770,28 @@
     return t.shared?.people?.[pid]?.name || fallback || (pid === HOST_PID ? 'Создатель чата' : 'Гость');
   }
   const authorName = (t, m) => personName(t, authorId(m), m.author?.name);
-  const tintByIndex = c => TINTS[(Number.isInteger(c) ? c : 0) % TINTS.length];
-  const tint = (t, pid) => tintByIndex(pid === HOST_PID ? HOST_TINT : t.shared?.people?.[pid]?.c);
+  // животное участника: у создателя — своё поле, у гостей — в списке людей
+  function animalOf(t, pid) {
+    const a = pid === HOST_PID && !isGuest(t) ? t.shared?.hostAnimal : t.shared?.people?.[pid]?.a;
+    if (validAnimal(a) !== null) return ANIMALS[a];
+    const h = [...String(pid)].reduce((x, ch) => (x * 31 + ch.charCodeAt(0)) >>> 0, 7);
+    return ANIMALS[h % ANIMALS.length];
+  }
+  const tint = (t, pid) => TINTS[animalOf(t, pid).t];
+  // свободное животное, по возможности ещё и другого цвета, чем у остальных
+  function pickAnimal(t) {
+    const used = new Set([t.shared?.hostAnimal, ...Object.values(t.shared?.people || {}).map(p => p.a)].filter(a => validAnimal(a) !== null));
+    const usedTints = new Set([...used].map(a => ANIMALS[a].t));
+    const free = ANIMALS.map((_, i) => i).filter(i => !used.has(i));
+    const fresh = free.filter(i => !usedTints.has(ANIMALS[i].t));
+    const pool = fresh.length ? fresh : free.length ? free : ANIMALS.map((_, i) => i);
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+  const avatarHTML = (t, pid, cls = '', title = '') => {
+    const an = animalOf(t, pid);
+    const tn = TINTS[an.t];
+    return `<span class="av${cls ? ' ' + cls : ''}" style="--av:${tn.av};--av-fg:${tn.fg}"${title ? ` title="${esc(title)}"` : ''}>${an.e}</span>`;
+  };
   // имя показываем над первой репликой подряд одного человека
   function startsRun(t, m) {
     const i = t.messages.indexOf(m);
@@ -1891,10 +1925,10 @@
   function sendMeta(t) { if (isHosted(t)) sendAll(t, { t: 'meta', title: t.title, model: t.model }); }
   function roster(t) {
     if (!t?.shared) return [];
-    if (isGuest(t)) return Object.entries(t.shared.people || {}).map(([id, p]) => ({ id, name: p.name, c: p.c, online: !!p.online }));
+    if (isGuest(t)) return Object.entries(t.shared.people || {}).map(([id, p]) => ({ id, name: p.name, a: p.a, online: !!p.online }));
     const on = new Set(onlineLinks(t).map(l => l.pid));
-    return [{ id: HOST_PID, name: hostName(), c: HOST_TINT, online: true }]
-      .concat(Object.entries(t.shared.people || {}).map(([id, p]) => ({ id, name: p.name, c: p.c, online: on.has(id) })));
+    return [{ id: HOST_PID, name: hostName(), a: t.shared.hostAnimal, online: true }]
+      .concat(Object.entries(t.shared.people || {}).map(([id, p]) => ({ id, name: p.name, a: p.a, online: on.has(id) })));
   }
   function sendPeople(t) {
     if (isHosted(t)) sendAll(t, { t: 'people', list: roster(t) });
@@ -1948,7 +1982,7 @@
     if (on) map[pid] = { name: name || personName(t, pid), until: Date.now() + 5000 };
     else delete map[pid];
     if (isHosted(t) && (on || had)) sendAll(t, { t: 'typing', pid, name: personName(t, pid), on: !!on }, pid);
-    if (had !== !!on && runtime.activeId === t.id) renderTyping(true);
+    if (had !== !!on && runtime.activeId === t.id) { renderTyping(true); renderPeoplePop(t); }
   }
   function renderTyping(scroll) {
     const t = activeThread();
@@ -1962,14 +1996,14 @@
       : `${names.length} ${plural(names.length, 'человек', 'человека', 'человек')} пишут`;
     const tn = tint(t, list[0][0]);
     if (old) {
-      old.querySelector('.typing-name').textContent = label;
+      old.querySelector('.typing-name').innerHTML = `${avatarHTML(t, list[0][0], 'av-sm')}<span>${esc(label)}</span>`;
       old.style.setProperty('--tint', tn.bg);
       old.style.setProperty('--tint-fg', tn.fg);
       return;
     }
     const near = isNearBottom();
     threadEl.insertAdjacentHTML('beforeend', `<div class="typing-row" style="--tint:${tn.bg};--tint-fg:${tn.fg}">` +
-      `<span class="typing-bubble">${DOTS}</span><span class="typing-name">${esc(label)}</span></div>`);
+      `<span class="typing-bubble">${DOTS}</span><span class="typing-name">${avatarHTML(t, list[0][0], 'av-sm')}<span>${esc(label)}</span></span></div>`);
     if (scroll && near) scrollToBottom(true);
   }
   setInterval(() => {
@@ -1977,7 +2011,7 @@
     for (const [tid, map] of Object.entries(sh.typing)) {
       let changed = false;
       for (const [pid, v] of Object.entries(map)) if (v.until <= now) { delete map[pid]; changed = true; }
-      if (changed && tid === runtime.activeId) renderTyping(true);
+      if (changed && tid === runtime.activeId) { renderTyping(true); renderPeoplePop(activeThread()); }
     }
   }, 1000);
 
@@ -2078,8 +2112,9 @@
     if (onlineLinks(t).filter(l => l.pid !== pid).length >= MAX_GUESTS) { bye(link, { t: 'full' }); return; }
     if (!pid) {
       pid = 'g' + GS.rid(6);
-      people[pid] = { name, token, c: GUEST_TINTS[Object.keys(people).length % GUEST_TINTS.length], seen: 0 };
+      people[pid] = { name, token, a: pickAnimal(t), seen: 0 };
     }
+    if (validAnimal(people[pid].a) === null) people[pid].a = pickAnimal(t);
     // тот же гость из другой вкладки — прежнее соединение закрываем
     for (const l of onlineLinks(t)) if (l.pid === pid) bye(l, { t: 'replaced' });
     const p = people[pid];
@@ -2092,12 +2127,12 @@
     delete sh.leaveTimers[key];
 
     link.conn.send({ t: 'welcome', you: pid, title: t.title, model: t.model, preset: t.preset || null });
+    sendPeople(t); // до переписки: гость сразу знает животных и цвета участников
     for (const m of t.messages.slice(-SNAPSHOT)) {
       const o = publicMsg(t, m);
       if (o) link.conn.send({ t: 'msg', m: o });
     }
     link.conn.send({ t: 'synced' });
-    sendPeople(t);
     for (const [tp, v] of Object.entries(sh.typing[t.id] || {})) {
       if (tp !== pid) link.conn.send({ t: 'typing', pid: tp, name: personName(t, tp, v.name), on: true });
     }
@@ -2136,6 +2171,7 @@
       t.editing = false;
     }
     if (!t.shared) t.shared = { role: 'host', people: {} };
+    if (validAnimal(t.shared.hostAnimal) === null) t.shared.hostAnimal = pickAnimal(t);
     if (!t.shared.active) { t.shared.active = true; t.shared.id = GS.rid(10); }
     startHost();
     save();
@@ -2319,12 +2355,12 @@
       }
       case 'people': {
         if (!t || !Array.isArray(d.list)) return;
-        const names = ppl => Object.entries(ppl || {}).map(([id, p]) => id + p.name).join('|');
+        const names = ppl => Object.entries(ppl || {}).map(([id, p]) => `${id}:${p.name}:${p.a}`).join('|');
         const before = names(t.shared.people);
         const people = {};
         for (const p of d.list.slice(0, 12)) {
           const id = validPid(p?.id);
-          if (id) people[id] = { name: cleanName(p.name) || 'Гость', c: Number.isInteger(p.c) ? Math.abs(p.c) % TINTS.length : 0, online: !!p.online };
+          if (id) people[id] = { name: cleanName(p.name) || 'Гость', a: validAnimal(p.a), online: !!p.online };
         }
         t.shared.people = people;
         save();
@@ -2363,7 +2399,7 @@
   const joinName = $('#joinName');
   const JOIN_FAIL = {
     offline: ['Создатель чата не в сети', 'Ссылка заработает, когда создатель снова откроет прототип'],
-    timeout: ['Не получилось подключиться', 'Возможно, мешает VPN или строгая сеть. Попробуйте ещё раз или другую сеть'],
+    timeout: ['Не получилось подключиться', 'Сервер чата не ответил. Проверьте интернет и попробуйте ещё раз'],
     network: ['Нет связи', 'Проверьте интернет и попробуйте ещё раз'],
     browser: ['Браузер не подходит', 'Откройте ссылку в свежем Chrome, Safari, Firefox или Edge'],
     closed: ['Ссылка не работает', 'Создатель закрыл доступ к чату, или ссылка скопирована не целиком'],
@@ -2396,6 +2432,8 @@
     joinEl.classList.add('is-leaving');
     setTimeout(() => { joinEl.hidden = true; joinEl.classList.remove('is-leaving'); }, 400);
     openThread(t.id);
+    const an = animalOf(t, t.shared.me);
+    setTimeout(() => toast(`Вы в чате, ваша аватарка — ${an.e} ${an.n}`), 450);
   }
   $('#joinForm').addEventListener('submit', e => {
     e.preventDefault();
@@ -2437,17 +2475,13 @@
     busy: 'Общие чаты сейчас обслуживает другая вкладка с прототипом',
     online: 'Чат работает, пока эта вкладка открыта',
   };
-  const avatarHTML = (p, title) => {
-    const tn = tintByIndex(p.c);
-    return `<span class="av" style="--av:${tn.av};--av-fg:${tn.fg}"${title ? ` title="${esc(title)}"` : ''}>${esc(initial(p.name))}</span>`;
-  };
-
   function openInvite() {
     const t = activeThread();
     if (!t) return;
     closeModelMenu();
     closePlusMenu();
     closeDice();
+    closePeople();
     invitePop.hidden = false;
     inviteBtn.setAttribute('aria-expanded', 'true');
     renderInvite();
@@ -2478,18 +2512,72 @@
       ? 'Чат работает, пока у создателя открыта вкладка'
       : isHosted(t) ? HOST_NOTE[sh.hostState] || HOST_NOTE.connecting : 'Ссылка работает, пока эта вкладка открыта';
     ipStop.hidden = !isHosted(t);
+  }
+
+  /* ---------- Кто в чате: плашка сверху и список участников ---------- */
+  const peoplePill = $('#peoplePill');
+  const peoplePop = $('#peoplePop');
+  // кто сейчас в сети: я — первым; у гостя без связи с создателем — только он сам
+  function presence(t) {
     const me = myPid(t);
-    $('#ipPeople').innerHTML = roster(t).map(p =>
-      `<div class="ip-person">${avatarHTML(p)}<span class="ip-pname">${esc(p.name)}${p.id === me ? ' <i>— вы</i>' : ''}</span>` +
-      `<span class="ip-state${p.online ? ' is-on' : ''}">${p.online ? 'в сети' : 'не в сети'}</span></div>`).join('');
+    const connected = !isGuest(t) || !!guestLinkFor(t);
+    const typing = sh.typing[t.id] || {};
+    return roster(t).map(p => ({
+      ...p,
+      me: p.id === me,
+      online: p.id === me || (connected && p.online),
+      typing: p.id !== me && !!typing[p.id] && typing[p.id].until > Date.now(),
+    })).sort((a, b) => (b.me - a.me) || (b.online - a.online));
   }
-  function renderPeople(t) {
-    const me = t && myPid(t);
-    const live = t && (!isGuest(t) || guestLinkFor(t));
-    const list = live ? roster(t).filter(p => p.online && p.id !== me) : [];
-    $('#people').innerHTML = list.slice(0, 4).map(p => avatarHTML(p, `${p.name} — в сети`)).join('') +
-      (list.length > 4 ? `<span class="av av-more">+${list.length - 4}</span>` : '');
+  function renderPeoplePill(t) {
+    const show = !!(t && t.shared && (isGuest(t) || isHosted(t)));
+    peoplePill.hidden = !show;
+    if (!show) { closePeople(); return; }
+    const list = presence(t);
+    const on = list.filter(p => p.online);
+    const others = on.filter(p => !p.me).map(p => p.name);
+    let text;
+    if (isGuest(t) && !guestLinkFor(t)) text = 'Нет связи с создателем';
+    else if (!others.length) text = 'Пока только вы';
+    else if (others.length === 1) text = `Вы и ${others[0]}`;
+    else if (others.length === 2) text = `Вы, ${others[0]} и ${others[1]}`;
+    else text = `Вы, ${others[0]} и ещё ${others.length - 1}`;
+    $('#ppStack').innerHTML = on.slice(0, 4).map(p => avatarHTML(t, p.id, '', p.me ? `${p.name} — вы` : p.name)).join('') +
+      (on.length > 4 ? `<span class="av av-more">+${on.length - 4}</span>` : '');
+    $('#ppText').textContent = text;
+    peoplePill.title = `В чате: ${on.map(p => p.name).join(', ')}`;
+    renderPeoplePop(t, list);
   }
+  function renderPeoplePop(t, list = presence(t)) {
+    if (peoplePop.hidden) return;
+    const n = list.filter(p => p.online).length;
+    $('#ppCount').textContent = `${n} ${plural(n, 'человек', 'человека', 'человек')} в сети`;
+    $('#ppList').innerHTML = list.map(p => {
+      const an = animalOf(t, p.id);
+      const role = [an.n, p.me ? 'вы' : '', p.id === HOST_PID ? 'создатель чата' : ''].filter(Boolean).join(' · ');
+      const state = p.typing ? 'пишет…' : p.online ? 'в сети' : 'не в сети';
+      return `<div class="pp-row${p.online ? '' : ' is-off'}">${avatarHTML(t, p.id, 'av-lg')}` +
+        `<div class="pp-who"><div class="pp-name">${esc(p.name)}</div><div class="pp-role">${esc(role)}</div></div>` +
+        `<span class="pp-state${p.online ? ' is-on' : ''}${p.typing ? ' is-typing' : ''}">${state}</span></div>`;
+    }).join('');
+  }
+  function openPeople() {
+    closeInvite();
+    closeDice();
+    closeModelMenu();
+    peoplePop.hidden = false;
+    peoplePill.setAttribute('aria-expanded', 'true');
+    renderPeoplePill(activeThread());
+  }
+  function closePeople() {
+    if (peoplePop.hidden) return;
+    peoplePop.hidden = true;
+    peoplePill.setAttribute('aria-expanded', 'false');
+  }
+  peoplePill.addEventListener('click', () => (peoplePop.hidden ? openPeople() : closePeople()));
+  document.addEventListener('click', e => {
+    if (!peoplePop.hidden && !peoplePop.contains(e.target) && !e.target.closest('#peoplePill')) closePeople();
+  });
   function renderShareNote(t) {
     let text = '';
     if (isGuest(t)) {
@@ -2510,7 +2598,7 @@
   }
   function renderShareUI() {
     const t = activeThread();
-    renderPeople(t);
+    renderPeoplePill(t);
     renderShareNote(t);
     renderInvite();
   }

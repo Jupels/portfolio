@@ -1,14 +1,20 @@
-// Общий чат: транспорт между браузерами (WebRTC через PeerJS).
-// Публичный сервер PeerJS только «знакомит» браузеры, дальше они общаются напрямую,
-// сообщения шифруются. Логики чата здесь нет — её ведёт app.js.
+// Общий чат: транспорт между браузерами через сервер-посредник (relay/ на fly.io).
+// Создатель и гости подключаются к посреднику по WebSocket — обычному HTTPS-порту 443,
+// поэтому связь проходит через VPN, корпоративные и мобильные сети. Посредник только
+// пересылает сообщения и ничего не хранит. Логики чата здесь нет — её ведёт app.js.
 (() => {
   'use strict';
-  const PREFIX = 'giga-proto-';
+  const CFG = window.GIGA_CONFIG || {};
+  const RELAY = (() => {
+    try { const dev = localStorage.getItem('giga.relay'); if (dev) return dev; } catch {}
+    return CFG.relay || 'wss://gigachat-relay.fly.dev';
+  })();
   const HOST_KEY = 'giga.hostId';
+  const SECRET_KEY = 'giga.hostSecret';
   const ABC = 'abcdefghijkmnpqrstuvwxyz23456789';
-  const PING_MS = 4000;
-  const DEAD_MS = 14000;
-  const CONNECT_MS = 12000;
+  const KEEPALIVE_MS = 15000;   // пинг посредника
+  const DEAD_MS = 45000;        // тишина дольше — соединение считаем оборванным
+  const CONNECT_MS = 15000;     // посредник может просыпаться пару секунд
 
   const rid = (n = 12) => {
     const a = new Uint8Array(n);
@@ -16,140 +22,178 @@
     return [...a].map(b => ABC[b % 32]).join('');
   };
   const validId = s => typeof s === 'string' && /^[a-z0-9]{6,32}$/.test(s);
-
-  function hostId() {
+  function stored(key, len) {
     try {
-      let id = localStorage.getItem(HOST_KEY);
-      if (!validId(id)) { id = rid(12); localStorage.setItem(HOST_KEY, id); }
-      return id;
-    } catch { return rid(12); }
+      let v = localStorage.getItem(key);
+      if (!v || !/^[a-z0-9]+$/.test(v) || v.length < len) { v = rid(len); localStorage.setItem(key, v); }
+      return v;
+    } catch { return rid(len); }
   }
+  const hostId = () => stored(HOST_KEY, 12);
 
-  // Обёртка над DataConnection: JSON-сообщения, пинг и детектор «тихого» обрыва.
-  function wrap(conn) {
-    const ev = {};
-    let closed = false, last = Date.now(), timer = 0;
-    const api = {
-      peer: conn.peer,
-      get open() { return conn.open && !closed; },
-      on(type, fn) { ev[type] = fn; return api; },
-      send(obj) {
-        if (!conn.open || closed) return false;
-        try { conn.send(obj); return true; } catch { return false; }
-      },
-      close() { finish(); try { conn.close(); } catch {} },
-    };
-    function finish() {
+  // WebSocket к посреднику с пингом и детектором «тихого» обрыва.
+  // При закрытии — «пока», чтобы посредник сразу освободил место (прокси держит сокет ещё ~10 с)
+  const liveSockets = new Set();
+  window.addEventListener('pagehide', () => { for (const s of liveSockets) s.close(); });
+  function socket(query, onMsg, onClose) {
+    const ws = new WebSocket(`${RELAY}/?${query}`);
+    let last = Date.now(), timer = 0, closed = false;
+    const finish = () => {
       if (closed) return;
       closed = true;
       clearInterval(timer);
-      ev.close?.();
-    }
-    const start = () => {
+      liveSockets.delete(api);
+      onClose();
+    };
+    ws.onopen = () => {
       last = Date.now();
       timer = setInterval(() => {
-        if (Date.now() - last > DEAD_MS) { api.close(); return; }
-        api.send({ t: 'ping' });
-      }, PING_MS);
-      ev.open?.();
+        if (Date.now() - last > DEAD_MS) { try { ws.close(); } catch {} finish(); return; }
+        if (ws.readyState === 1) ws.send('{"t":"_ping"}');
+      }, KEEPALIVE_MS);
     };
-    if (conn.open) setTimeout(start, 0); else conn.on('open', start);
-    conn.on('data', d => {
+    ws.onmessage = e => {
       last = Date.now();
-      if (d && (d.t === 'ping' || d.t === 'pong')) { if (d.t === 'ping') api.send({ t: 'pong' }); return; }
-      ev.data?.(d);
-    });
-    conn.on('close', finish);
-    conn.on('error', finish);
+      let m;
+      try { m = JSON.parse(e.data); } catch { return; }
+      if (m && m.t !== '_pong') onMsg(m);
+    };
+    ws.onclose = finish;
+    ws.onerror = () => {};
+    const api = {
+      send(obj) {
+        if (ws.readyState !== 1) return false;
+        try { ws.send(JSON.stringify(obj)); return true; } catch { return false; }
+      },
+      close() {
+        try { if (ws.readyState === 1) ws.send('{"t":"_bye"}'); ws.close(); } catch {}
+        finish();
+      },
+    };
+    liveSockets.add(api);
     return api;
   }
 
-  // Хост: один постоянный peer на браузер, принимает гостей во все общие чаты.
-  // state: connecting → online; reconnecting — пропала связь с сервером знакомств;
-  // busy — этот адрес уже занят (обычно другой вкладкой с прототипом).
+  // Соединение с одним гостем на стороне создателя: те же on/send/close, что у гостя
+  function guestConn(c, sock) {
+    const ev = {};
+    let closed = false;
+    const api = {
+      peer: c,
+      get open() { return !closed; },
+      on(type, fn) { ev[type] = fn; return api; },
+      send: obj => !closed && sock.send({ t: '_send', c, d: obj }),
+      close() { if (closed) return; sock.send({ t: '_close', c }); api._gone(); },
+      _data: d => { if (!closed) ev.data?.(d); },
+      _gone() { if (closed) return; closed = true; ev.close?.(); },
+    };
+    return api;
+  }
+
+  // Создатель: один адрес на браузер, принимает гостей во все свои общие чаты.
+  // state: connecting → online; reconnecting — пропала связь с посредником;
+  // busy — этот адрес уже обслуживает другая вкладка с прототипом.
   function createHost({ onConnection, onState }) {
     const id = hostId();
-    let peer = null, stopped = false, tries = 0, timer = 0;
+    const secret = stored(SECRET_KEY, 24);
+    const conns = new Map();
+    let sock = null, stopped = false, tries = 0, timer = 0, busy = 0;
     const set = s => onState && onState(s);
-    const later = (fn, ms) => { clearTimeout(timer); timer = setTimeout(fn, ms); };
 
     function start() {
       if (stopped) return;
       set(tries ? 'reconnecting' : 'connecting');
-      try { peer?.destroy(); } catch {}
-      peer = new Peer(PREFIX + id, { debug: 0 });
-      peer.on('open', () => { tries = 0; set('online'); });
-      peer.on('connection', conn => onConnection(wrap(conn)));
-      peer.on('disconnected', () => {
-        if (stopped || peer.destroyed) return;
-        set('reconnecting');
-        later(() => { try { peer.reconnect(); } catch { start(); } }, 2000);
-      });
-      peer.on('error', err => {
+      let verdict = null;
+      sock = socket(`role=host&id=${id}&secret=${secret}`, m => {
+        switch (m.t) {
+          case '_ready': tries = 0; busy = 0; set('online'); break;
+          case '_busy': verdict = 'busy'; break;
+          case '_taken': verdict = 'taken'; break;
+          case '_replaced': verdict = 'replaced'; break;
+          case '_open': {
+            if (typeof m.c !== 'string') return;
+            const conn = guestConn(m.c, sock);
+            conns.set(m.c, conn);
+            onConnection(conn);
+            break;
+          }
+          case '_data': conns.get(m.c)?._data(m.d); break;
+          case '_gone': conns.get(m.c)?._gone(); conns.delete(m.c); break;
+        }
+      }, () => {
+        for (const c of conns.values()) c._gone();
+        conns.clear();
         if (stopped) return;
-        const type = err && err.type;
-        if (type === 'peer-unavailable') return; // к хосту не относится
         tries++;
-        if (type === 'unavailable-id') {
-          // после перезагрузки сервер ещё пару секунд помнит прошлую вкладку
-          set(tries > 3 ? 'busy' : 'connecting');
-          later(start, tries > 3 ? 15000 : 4000);
+        // чаты подхватила вкладка, открытая позже, — эта больше не переподключается
+        if (verdict === 'replaced') { set('busy'); return; }
+        if (verdict === 'busy' || verdict === 'taken') {
+          // после перезагрузки посредник ещё пару секунд помнит прошлую вкладку
+          busy++;
+          set(busy > 3 ? 'busy' : 'connecting');
+          timer = setTimeout(start, busy > 3 ? 15000 : 3000);
           return;
         }
         set('reconnecting');
-        later(start, Math.min(30000, 2000 * tries));
+        timer = setTimeout(start, Math.min(30000, 1500 * tries));
       });
     }
     start();
     return {
       id,
-      stop() { stopped = true; clearTimeout(timer); try { peer?.destroy(); } catch {} },
+      stop() { stopped = true; clearTimeout(timer); sock?.close(); },
     };
   }
 
-  // Гость: случайный peer, одно соединение с хостом. onFail(reason):
-  // offline — хоста нет в сети, timeout — не удалось соединиться, network — нет связи.
+  // Гость: одно соединение с создателем через посредника. onFail(reason):
+  // offline — создателя нет в сети, timeout — посредник не ответил, network — нет связи.
   function join(host, { onOpen, onData, onClose, onFail }) {
-    let peer = null, conn = null, stopped = false, timer = 0, wasOpen = false;
-    const fail = reason => {
+    let sock = null, stopped = false, timer = 0, open = false, gen = 0;
+    function connect(attempt = 0) {
+      if (stopped) return;
+      const my = ++gen; // события прежней попытки дальше игнорируются
       clearTimeout(timer);
-      if (stopped) return;
-      onFail && onFail(reason);
-    };
-    function connect() {
-      if (stopped) return;
-      clearTimeout(timer);
-      timer = setTimeout(() => { try { conn?.close(); } catch {} fail('timeout'); }, CONNECT_MS);
-      if (!peer || peer.destroyed) {
-        peer = new Peer({ debug: 0 });
-        peer.on('open', dial);
-        peer.on('error', err => {
-          const type = err && err.type;
-          if (type === 'peer-unavailable') fail('offline');
-          else if (!wasOpen || !conn?.open) fail(type === 'browser-incompatible' ? 'browser' : 'network');
-        });
-        peer.on('disconnected', () => { if (!stopped && !peer.destroyed) { try { peer.reconnect(); } catch {} } });
-      } else if (peer.disconnected) {
-        try { peer.reconnect(); } catch {}
-        peer.once('open', dial);
-      } else {
-        dial();
-      }
-    }
-    function dial() {
-      if (stopped) return;
-      const raw = peer.connect(PREFIX + host, { reliable: true, serialization: 'json' });
-      conn = wrap(raw)
-        .on('open', () => { clearTimeout(timer); wasOpen = true; onOpen && onOpen(); })
-        .on('data', d => onData && onData(d))
-        .on('close', () => { if (!stopped && wasOpen) onClose && onClose(); });
+      const old = sock;
+      sock = null;
+      open = false;
+      old?.close();
+      let settled = false;
+      const live = () => my === gen && !stopped;
+      const fail = reason => {
+        if (settled || !live()) return;
+        settled = true;
+        clearTimeout(timer);
+        onFail && onFail(reason);
+      };
+      timer = setTimeout(() => { if (live()) { fail('timeout'); sock?.close(); } }, CONNECT_MS);
+      const s = socket(`role=guest&host=${host}`, m => {
+        if (!live()) return;
+        if (m.t === '_open') { settled = true; open = true; clearTimeout(timer); onOpen && onOpen(); return; }
+        if (m.t === '_offline') { fail('offline'); return; }
+        if (m.t === '_ended') { s.close(); return; } // создатель ушёл или отключил гостя
+        if (open) onData && onData(m);
+      }, () => {
+        if (!live()) return;
+        const was = open;
+        open = false;
+        if (was) { onClose && onClose(); return; }
+        if (settled) return;
+        // соединение сорвалось до ответа посредника — пробуем ещё пару раз, прежде чем показать ошибку
+        if (attempt < 2 && navigator.onLine !== false) {
+          clearTimeout(timer);
+          timer = setTimeout(() => connect(attempt + 1), 700 * (attempt + 1));
+          return;
+        }
+        fail(navigator.onLine === false ? 'network' : 'timeout');
+      });
+      sock = s;
     }
     connect();
     return {
-      send: obj => !!conn && conn.send(obj),
-      get open() { return !!conn && conn.open; },
-      retry() { try { conn?.close(); } catch {} connect(); },
-      stop() { stopped = true; clearTimeout(timer); try { conn?.close(); } catch {} try { peer?.destroy(); } catch {} },
+      send: obj => open && !!sock && sock.send(obj),
+      get open() { return open; },
+      retry: () => connect(0),
+      stop() { stopped = true; clearTimeout(timer); sock?.close(); },
     };
   }
 
@@ -160,5 +204,5 @@
   }
   const makeLink = (host, share) => `${location.origin === 'null' ? 'file://' : location.origin}${location.pathname}#join=${host}.${share}`;
 
-  window.GigaShare = { available: typeof window.Peer === 'function', rid, validId, hostId, createHost, join, parseLink, makeLink };
+  window.GigaShare = { available: typeof WebSocket === 'function', relay: RELAY, rid, validId, hostId, createHost, join, parseLink, makeLink };
 })();
